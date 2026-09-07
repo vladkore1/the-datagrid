@@ -2638,13 +2638,13 @@
  * An open row and its fields have to read as one block rather than as two rows.
  * Painted here rather than with a utility class: the row already carries a
  * background from a token, and two background classes on one element leave the
- * winner to stylesheet order. The token is near-white, so it is used at full
- * strength; anything faded reads as no change at all.
+ * winner to stylesheet order. Half of a near-white token is about as light as
+ * this can go and still be seen; a fifth of it was invisible.
  */
 .tdg-root .tdg-mobile-row[data-expanded="true"] {
   background: var(
     --tdg-mobile-row-expanded-bg,
-    var(--muted, oklch(0.97 0 0))
+    color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
   ) !important;
 }
 
