@@ -2759,9 +2759,13 @@
 
 /* No row height to fill on mobile, so it flattens back into the normal flow it
    was emulating; its own flex arrangement survives. */
+/* A renderer that fills its table cell has no cell to fill here, and the
+   centring that goes with a column's width leaves its content adrift in the
+   middle of a card field. Aligned with every other value instead. */
 .tdg-mobile-cell .tdg-cell-fill {
   position: static !important;
   inset: auto !important;
   height: auto !important;
   width: 100% !important;
+  justify-content: flex-start !important;
 }
