@@ -1223,7 +1223,10 @@ export function MobileGridList({
                       {/* Wrapping rather than clipping: a field can hold a
                           button or a row of icons, and neither ellipses. */}
                       <span
-                        className="tdg-mobile-cell min-w-0 break-words text-foreground/80"
+                        /* The cell's own renderer ellipsises to fit a table
+                           column; here the column is a share of the row, so
+                           the value wraps and stays readable in full. */
+                        className="tdg-mobile-cell min-w-0 break-words text-foreground/80 [&_.truncate]:overflow-visible [&_.truncate]:whitespace-normal"
                         data-slot="mobile-cell"
                         data-cell-role="detail"
                       >
