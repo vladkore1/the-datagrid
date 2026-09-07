@@ -435,6 +435,22 @@ function ReactDataGrid(props: TypeDataGridProps) {
     [allowMobileTransform, props.mobileTransform, props.pagination]
   );
   const isMobileViewport = useMediaQuery(mobileTransformConfig.mediaQuery);
+  const emitSearchColumnIdsChange =
+    mobileTransformConfig.onSearchColumnIdsChange;
+  // Held here rather than in the mobile layout, which unmounts the moment the
+  // viewport widens and would drop a persisted scope with it.
+  const [searchColumnIds, setSearchColumnIds] = useControllableState<
+    string[] | undefined
+  >({
+    value: mobileTransformConfig.searchColumnIds,
+    defaultValue: mobileTransformConfig.defaultSearchColumnIds,
+    onChange: React.useCallback(
+      (next: string[] | undefined) => {
+        if (next) emitSearchColumnIdsChange?.(next);
+      },
+      [emitSearchColumnIdsChange]
+    ),
+  });
   const hasColumnEditing = inputColumns.some(
     (column) => Boolean(column.editable) && isColumnVisible(column)
   );
@@ -3567,8 +3583,21 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 defaultSortDirection={defaultSortDir}
                 sortable={sortable}
                 sortFunctions={sortFunctions}
-                searchEnabled={!searchConnected && !tree.enabled}
-                columnPickerEnabled={toolbarController == null}
+                searchEnabled={
+                  mobileTransformConfig.showSearch ??
+                  (!searchConnected && !tree.enabled)
+                }
+                columnPickerEnabled={
+                  mobileTransformConfig.showColumnPicker ??
+                  toolbarController == null
+                }
+                sortEnabled={mobileTransformConfig.showSort}
+                showSettings={mobileTransformConfig.showSettings}
+                settingsSurface={mobileTransformConfig.settingsSurface}
+                searchColumnIds={searchColumnIds}
+                onSearchColumnIdsChange={setSearchColumnIds}
+                resultCountEnabled={mobileTransformConfig.showResultCount}
+                stickyOffset={mobileTransformConfig.stickyOffset}
                 authoritativeResultCount={
                   tree.enabled
                     ? countTreeRecords(
@@ -3590,6 +3619,15 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 defaultVariant={mobileTransformConfig.defaultVariant}
                 listRows={mobileTransformConfig.listRows}
                 listActions={mobileTransformConfig.listActions}
+                listActionsSide={mobileTransformConfig.listActionsSide}
+                listFieldIds={mobileTransformConfig.listFieldIds}
+                listFieldLimit={mobileTransformConfig.listFieldLimit}
+                listExpand={mobileTransformConfig.listExpand}
+                showRowExpandToggle={mobileTransformConfig.showRowExpandToggle}
+                cardFields={mobileTransformConfig.cardFields}
+                cardColumns={mobileTransformConfig.cardColumns}
+                cardLabelWidth={mobileTransformConfig.cardLabelWidth}
+                cardFieldLimit={mobileTransformConfig.cardFieldLimit}
                 showVariantToggle={mobileTransformConfig.showVariantToggle}
                 showToolbar={mobileTransformConfig.showToolbar}
                 onVariantChange={mobileTransformConfig.onVariantChange}

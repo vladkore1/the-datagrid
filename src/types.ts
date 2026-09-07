@@ -1574,6 +1574,21 @@ export type TypeMobileListRows = "divided" | "boxed";
 /** Where the mobile list variant puts a row's action cells. */
 export type TypeMobileListActions = "inline" | "bottom";
 
+/** What the mobile toolbar's settings button opens. */
+export type TypeMobileSettingsSurface = "drawer" | "panel";
+
+/** Which edge of a mobile list row carries its action cells. */
+export type TypeMobileListActionsSide = "start" | "end";
+
+/** How the mobile list variant reveals the rest of a row's fields. */
+export type TypeMobileListExpand = "none" | "click" | "chevron";
+
+/** Where the mobile card variant puts a field's label. */
+export type TypeMobileCardFields = "stacked" | "inline";
+
+/** How many field pairs a mobile card lays out per row. */
+export type TypeMobileCardColumns = 1 | 2 | "auto";
+
 /** Which element the mobile layout virtualizes against. */
 export type TypeMobileTransformScroll = "container" | "page";
 
@@ -1636,6 +1651,80 @@ export type TypeMobileTransformProps = {
    */
   listActions?: TypeMobileListActions;
 
+  /**
+   * Which end of the action line `listActions: "bottom"` puts the controls at:
+   * `"end"` (default) is the trailing end, `"start"` the leading one, mirrored
+   * in a right-to-left grid. It moves inline actions to the row's leading edge
+   * as well.
+   */
+  listActionsSide?: TypeMobileListActionsSide;
+
+  /**
+   * Column ids shown under a list row's main label, in this order. Leave it
+   * unset to keep the current behavior, which takes the row's first fields in
+   * column order. Either way a column the viewer hid through the column picker
+   * stays hidden, so an id here is a default rather than a guarantee.
+   */
+  listFieldIds?: string[];
+
+  /**
+   * Fields under that main label. Defaults to `3`, or to every id in
+   * `listFieldIds` when that is set. `"all"` shows every field the row has,
+   * which on a phone is what `listExpand` is for instead.
+   */
+  listFieldLimit?: number | "all";
+
+  /**
+   * Lets a list row open a panel of every field it has, laid out with the
+   * `card*` options. `"chevron"` (the affordance alone) and `"click"` (the
+   * whole row as well as the affordance) opt in; `"none"` is the default.
+   *
+   * The row's own `onRowClick` still fires under `"click"`, and a tap that
+   * lands on a control inside the row - an action cell, a checkbox, a link -
+   * leaves the panel alone.
+   */
+  listExpand?: TypeMobileListExpand;
+
+  /**
+   * Chevron on an expandable list row. Defaults to `true`. `false` leaves the
+   * row's own tap as the only way in, so it needs `listExpand: "click"` and it
+   * takes the keyboard and screen-reader route to the panel with it: the row
+   * still reports its state through `aria-expanded`, but only a pointer can
+   * open it.
+   */
+  showRowExpandToggle?: boolean;
+
+  /**
+   * Where a card field puts its label. `"stacked"` (default) sits it above the
+   * value; `"inline"` puts the value to the right of the label and gives every
+   * label the same width, so the values line up on one axis down the card
+   * instead of starting wherever the label above them ended.
+   */
+  cardFields?: TypeMobileCardFields;
+
+  /**
+   * Field pairs a card lays out per row. `"auto"` (default) is one below 540px
+   * and two above it; `2` keeps two at any width, which suits short values and
+   * gets cramped with long ones.
+   */
+  cardColumns?: TypeMobileCardColumns;
+
+  /**
+   * Width of the label column under `cardFields: "inline"`. A number is
+   * pixels, a string is any CSS length or percentage of the field's own width.
+   * Defaults to `40%`, which keeps two columns on a phone readable; a fixed
+   * length is the better choice once the cards have room. Also settable as
+   * `--tdg-mobile-card-label-width`.
+   */
+  cardLabelWidth?: number | string;
+
+  /**
+   * Fields a card shows before the rest collapse behind its "n more fields"
+   * disclosure. `"all"` shows every field and drops the disclosure. Defaults
+   * to `6`.
+   */
+  cardFieldLimit?: number | "all";
+
   /** Fires whenever the viewer flips the cards/list toggle. */
   onVariantChange?: (variant: TypeMobileTransformVariant) => void;
 
@@ -1653,6 +1742,77 @@ export type TypeMobileTransformProps = {
    * `true`.
    */
   showToolbar?: boolean;
+
+  /**
+   * Search box in the mobile toolbar. Defaults to `true`, and to `false` for a
+   * grid whose search box is mounted outside it or which renders a tree.
+   */
+  showSearch?: boolean;
+
+  /** Sort control in the mobile toolbar. Defaults to `true`. */
+  showSort?: boolean;
+
+  /**
+   * Column picker in the mobile toolbar. Defaults to `true`, and to `false`
+   * inside an `RDGToolbarProvider`, whose own column control the grid takes
+   * as the one a consumer wants. Set it to `true` for a desktop toolbar that
+   * steps aside at mobile widths, which leaves the picker nowhere else to go.
+   */
+  showColumnPicker?: boolean;
+
+  /**
+   * Gathers the toolbar's controls behind one settings button beside the
+   * search box: the cards/list choice, the column picker, and the search-scope
+   * picker. Defaults to `false`, which leaves each control in the bar.
+   *
+   * The sort control keeps its own button either way, since its panel is not
+   * menu-shaped. `showVariantToggle` / `showColumnPicker` still decide whether
+   * a control exists at all; this decides where it lives.
+   */
+  showSettings?: boolean;
+
+  /**
+   * What that button opens. `"drawer"` (default) slides in from the grid's
+   * trailing edge over the full height; `"panel"` puts the same sections
+   * inline under the toolbar, dimming nothing and trapping no focus.
+   *
+   * Either way the sort control moves in as well, so the bar is left with the
+   * search box and this one button.
+   */
+  settingsSurface?: TypeMobileSettingsSurface;
+
+  /**
+   * Column ids the mobile search reads, as a controlled value. Leave it unset
+   * to let the grid hold the selection, seeded by `defaultSearchColumnIds`.
+   * Either way, unset means every column the grid can search, and a column
+   * with `searchable: false` stays out of it.
+   */
+  searchColumnIds?: string[];
+
+  /** Initial search scope while `searchColumnIds` is uncontrolled. */
+  defaultSearchColumnIds?: string[];
+
+  /**
+   * Fires with the full set of searched column ids whenever the viewer changes
+   * the scope, for a consumer that persists it. The picker never hands back an
+   * empty set: the last searched column cannot be unchecked.
+   */
+  onSearchColumnIdsChange?: (columnIds: string[]) => void;
+
+  /** Result count under the mobile toolbar's controls. Defaults to `true`. */
+  showResultCount?: boolean;
+
+  /**
+   * Where the mobile toolbar comes to rest while it is sticky under
+   * `scroll: "page"`, measured from the top of the viewport, and the room the
+   * pager leaves clear when it returns to the first row. A number is pixels; a
+   * string is any CSS length, so `"var(--app-header-height)"` follows a host
+   * header whose height changes.
+   *
+   * Set it to the height of whatever the page keeps fixed above the grid.
+   * Defaults to `0`.
+   */
+  stickyOffset?: number | string;
 
   /**
    * Bounds how many rows the mobile layout renders on a grid that is not

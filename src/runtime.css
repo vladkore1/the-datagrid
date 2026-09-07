@@ -58,6 +58,116 @@
   color: var(--foreground, oklch(0.985 0 0)) !important;
 }
 
+/* The dialog shell is armoured to centre itself, so the settings panel has to
+   overrule it here rather than with utility classes: it pins to the trailing
+   edge over the full height and hands its own body the scrolling. Logical
+   properties throughout, so a right-to-left grid gets it on the other side. */
+.tdg-mobile-settings-drawer {
+  inset-block: 0 !important;
+  inset-inline: auto 0 !important;
+  width: min(22rem, 88vw) !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+  border-inline-start-width: 1px !important;
+  border-start-start-radius: var(--tdg-radius-lg) !important;
+  border-end-start-radius: var(--tdg-radius-lg) !important;
+  border-start-end-radius: 0 !important;
+  border-end-end-radius: 0 !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+/* The shell only fades, so the drawer brings its own slide. Radix keeps the
+   element mounted for the closing animation, so both directions run. */
+@keyframes tdg-settings-drawer-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-drawer-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes tdg-settings-drawer-in-rtl {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-drawer-out-rtl {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* The shell's own fade never plays, since it is the portal that unmounts, so
+   the backdrop fades on the same timings as the drawer it belongs to. */
+@keyframes tdg-settings-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.tdg-mobile-settings-backdrop {
+  animation: tdg-settings-backdrop-in 220ms ease-out !important;
+}
+
+.tdg-mobile-settings-backdrop--closing {
+  animation: tdg-settings-backdrop-out 180ms ease-in forwards !important;
+}
+
+.tdg-mobile-settings-drawer[data-state="open"] {
+  animation: tdg-settings-drawer-in 220ms ease-out !important;
+}
+
+.tdg-mobile-settings-drawer[data-closing="true"] {
+  animation: tdg-settings-drawer-out 180ms ease-in forwards !important;
+}
+
+[dir="rtl"] .tdg-mobile-settings-drawer[data-state="open"] {
+  animation-name: tdg-settings-drawer-in-rtl !important;
+}
+
+[dir="rtl"] .tdg-mobile-settings-drawer[data-closing="true"] {
+  animation-name: tdg-settings-drawer-out-rtl !important;
+}
+
 .tdg-mobile-nav-content {
   --tdg-mobile-nav-header-height: 6rem;
   inset: 0 !important;

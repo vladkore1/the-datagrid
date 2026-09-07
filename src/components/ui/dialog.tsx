@@ -3,12 +3,27 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "../../lib/utils"
+import { useDatagridPortalContainer } from "../../theme/context"
 
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
 
-const DialogPortal = DialogPrimitive.Portal
+/* Into the grid's own portal container by default, exactly as the menus do:
+   the token and item rules are scoped to a grid root. */
+function DialogPortal({
+  container,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  const portalContainer = useDatagridPortalContainer()
+
+  return (
+    <DialogPrimitive.Portal
+      {...props}
+      container={container ?? portalContainer ?? undefined}
+    />
+  )
+}
 
 const DialogClose = DialogPrimitive.Close
 
@@ -30,11 +45,14 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, style, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** For a content shape whose backdrop has to animate with it. */
+    overlayClassName?: string
+  }
+>(({ className, children, style, overlayClassName, ...props }, ref) => (
   <DialogPortal>
     <div className="tdg-dialog-portal" data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"
