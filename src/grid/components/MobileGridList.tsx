@@ -1208,11 +1208,14 @@ export function MobileGridList({
                 </div>
               ) : null}
               {listDetailCells.length ? (
-                <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                /* Columns of one width rather than a flowing line: with fields
+                   of differing lengths, one row would fit them all and the next
+                   would wrap, leaving nothing lined up down the list. */
+                <div className="mt-0.5 grid min-w-0 gap-x-3 gap-y-0.5 text-xs text-muted-foreground [grid-template-columns:repeat(auto-fill,minmax(var(--tdg-mobile-summary-column,6rem),1fr))]">
                   {listDetailCells.map((cell) => (
                     <span
                       key={cell.id}
-                      className="inline-flex min-w-0 items-center gap-1 truncate"
+                      className="inline-flex min-w-0 items-center gap-1"
                     >
                       <span className="shrink-0 opacity-70">
                         {cellLabel(cell)}

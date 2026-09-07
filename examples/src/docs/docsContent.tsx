@@ -3600,8 +3600,11 @@ type TypeSize = { width: number; height: number };`}
           <code>data-last</code> for restyling the end caps. A row opened
           through <code>listExpand</code> carries <code>data-expanded</code> and
           takes its background from <code>--tdg-mobile-row-expanded-bg</code>,
-          which defaults to half of the muted token. The pager and the Show more
-          button read the <code>--tdg-mobile-pagination-*</code> and{" "}
+          which defaults to half of the muted token. The fields under a row's
+          label sit in columns of one width so they line up down the list, and{" "}
+          <code>--tdg-mobile-summary-column</code> sets that width, 6rem by
+          default. The pager and the Show more button read the{" "}
+          <code>--tdg-mobile-pagination-*</code> and{" "}
           <code>--tdg-mobile-show-more-*</code> tokens.
         </p>
       </div>
