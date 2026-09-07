@@ -148,6 +148,23 @@ const FILL_CELL_STYLE: React.CSSProperties = {
 const CONTROL_LIST_CLASS =
   "tdg-tokens border border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)]";
 
+function ControlGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <fieldset className="min-w-0 rounded-lg border border-[var(--border)] px-3 pb-3 pt-1">
+      <legend className="px-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </legend>
+      <div className="flex flex-wrap items-end gap-3">{children}</div>
+    </fieldset>
+  );
+}
+
 function ControlField({
   label,
   children,
@@ -350,118 +367,26 @@ export default function MobileTransformExample() {
       {/* A dashed panel so the harness never reads as part of the grid below. */}
       <div className="tdg-tokens flex flex-col gap-3 rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-3">
         <div
-          className="flex flex-wrap items-end gap-3 text-sm"
+          className="grid items-start gap-3 text-sm min-[880px]:grid-cols-2 min-[1240px]:grid-cols-3"
           data-testid="mobile-transform-controls"
         >
-          <ControlField label="Scroll">
-            <Select
-              value={scroll}
-              onValueChange={(value) =>
-                setScroll(value as TypeMobileTransformScroll)
-              }
-            >
-              <SelectTrigger
-                className="h-9 w-[10.5rem]"
-                data-testid="mobile-scroll-mode"
-                aria-label="Scroll"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={CONTROL_LIST_CLASS}>
-                {SCROLL_MODES.map((mode) => (
-                  <SelectItem key={mode.value} value={mode.value}>
-                    {mode.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ControlField>
-          <ControlField label="Row budget">
-            <Select
-              value={overflow}
-              onValueChange={(value) =>
-                setOverflow(value as TypeMobileTransformOverflow)
-              }
-            >
-              <SelectTrigger
-                className="h-9 w-[9rem]"
-                data-testid="mobile-overflow-mode"
-                aria-label="Row budget"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={CONTROL_LIST_CLASS}>
-                {OVERFLOW_MODES.map((mode) => (
-                  <SelectItem key={mode.value} value={mode.value}>
-                    {mode.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ControlField>
-          <ControlField label="List rows">
-            <Select
-              value={listRows}
-              onValueChange={(value) =>
-                setListRows(value as TypeMobileListRows)
-              }
-            >
-              <SelectTrigger
-                className="h-9 w-[7.5rem]"
-                data-testid="mobile-list-rows"
-                aria-label="List rows"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={CONTROL_LIST_CLASS}>
-                {LIST_ROW_STYLES.map((mode) => (
-                  <SelectItem key={mode.value} value={mode.value}>
-                    {mode.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ControlField>
-          <ControlField label="List actions">
-            <Select
-              value={listActions}
-              onValueChange={(value) =>
-                setListActions(value as TypeMobileListActions)
-              }
-            >
-              <SelectTrigger
-                className="h-9 w-[7.5rem]"
-                data-testid="mobile-list-actions"
-                aria-label="List actions"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={CONTROL_LIST_CLASS}>
-                {LIST_ACTION_PLACEMENTS.map((mode) => (
-                  <SelectItem key={mode.value} value={mode.value}>
-                    {mode.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ControlField>
-          {variant === "list" ? (
-            <ControlField label="Action side">
+          <ControlGroup title="Layout">
+            <ControlField label="Scroll">
               <Select
-                value={listActionsSide}
+                value={scroll}
                 onValueChange={(value) =>
-                  setListActionsSide(value as TypeMobileListActionsSide)
+                  setScroll(value as TypeMobileTransformScroll)
                 }
               >
                 <SelectTrigger
-                  className="h-9 w-[6.5rem]"
-                  data-testid="mobile-list-actions-side"
-                  aria-label="Action side"
+                  className="h-9 w-[10.5rem]"
+                  data-testid="mobile-scroll-mode"
+                  aria-label="Scroll"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={CONTROL_LIST_CLASS}>
-                  {LIST_ACTION_SIDES.map((mode) => (
+                  {SCROLL_MODES.map((mode) => (
                     <SelectItem key={mode.value} value={mode.value}>
                       {mode.label}
                     </SelectItem>
@@ -469,99 +394,95 @@ export default function MobileTransformExample() {
                 </SelectContent>
               </Select>
             </ControlField>
-          ) : null}
-          {variant === "list" ? (
-            <ControlField label="Label fields">
+            <ControlField label="Row budget">
               <Select
-                value={`${listFieldLimit}`}
+                value={overflow}
                 onValueChange={(value) =>
-                  setListFieldLimit(value === "all" ? "all" : Number(value))
+                  setOverflow(value as TypeMobileTransformOverflow)
                 }
               >
                 <SelectTrigger
-                  className="h-9 w-[6.5rem]"
-                  data-testid="mobile-list-field-limit"
-                  aria-label="Label fields"
+                  className="h-9 w-[9rem]"
+                  data-testid="mobile-overflow-mode"
+                  aria-label="Row budget"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={CONTROL_LIST_CLASS}>
-                  {LIST_FIELD_LIMITS.map((limit) => (
-                    <SelectItem key={limit} value={`${limit}`}>
-                      {limit === "all" ? "All" : limit}
+                  {OVERFLOW_MODES.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value}>
+                      {mode.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </ControlField>
-          ) : null}
-          {variant === "list" ? (
-            <label className="flex items-center gap-2 pb-2 text-sm">
-              <Checkbox
-                checked={pinnedListFields}
-                data-testid="mobile-list-pinned-fields-toggle"
-                onCheckedChange={(checked) =>
-                  setPinnedListFields(checked === true)
-                }
-              />
-              Pin status + revenue
-            </label>
-          ) : null}
-          {variant === "list" ? (
-            <ControlField label="Row expand">
+            <ControlField label="Breakpoint">
               <Select
-                value={listExpand}
-                onValueChange={(value) =>
-                  setListExpand(value as TypeMobileListExpand)
-                }
+                value={`${breakpoint}`}
+                onValueChange={(value) => setBreakpoint(Number(value))}
               >
                 <SelectTrigger
                   className="h-9 w-[7.5rem]"
-                  data-testid="mobile-list-expand"
-                  aria-label="Row expand"
+                  data-testid="mobile-breakpoint"
+                  aria-label="Breakpoint"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={CONTROL_LIST_CLASS}>
-                  {LIST_EXPAND_MODES.map((mode) => (
-                    <SelectItem key={mode.value} value={mode.value}>
-                      {mode.label}
+                  {BREAKPOINTS.map((width) => (
+                    <SelectItem key={width} value={`${width}`}>
+                      ≤ {width}px
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </ControlField>
-          ) : null}
-          {variant === "list" && listExpand !== "none" ? (
             <label className="flex items-center gap-2 pb-2 text-sm">
               <Checkbox
-                checked={rowExpandToggle}
-                data-testid="mobile-row-expand-toggle"
+                checked={gridPagination}
+                data-testid="mobile-grid-pagination-toggle"
                 onCheckedChange={(checked) =>
-                  setRowExpandToggle(checked === true)
+                  setGridPagination(checked === true)
                 }
               />
-              Chevron
+              Grid pagination
             </label>
-          ) : null}
-          {variant === "cards" || listExpand !== "none" ? (
-            <>
-              <ControlField label="Card fields">
+          </ControlGroup>
+          <ControlGroup title="Toolbar">
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={showToolbar}
+                data-testid="mobile-toolbar-toggle"
+                onCheckedChange={(checked) => setShowToolbar(checked === true)}
+              />
+              Mobile toolbar
+            </label>
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={showSettings}
+                data-testid="mobile-settings-toggle"
+                onCheckedChange={(checked) => setShowSettings(checked === true)}
+              />
+              Settings button
+            </label>
+            {showSettings ? (
+              <ControlField label="Settings surface">
                 <Select
-                  value={cardFields}
+                  value={settingsSurface}
                   onValueChange={(value) =>
-                    setCardFields(value as TypeMobileCardFields)
+                    setSettingsSurface(value as TypeMobileSettingsSurface)
                   }
                 >
                   <SelectTrigger
-                    className="h-9 w-[7.5rem]"
-                    data-testid="mobile-card-fields"
-                    aria-label="Card fields"
+                    className="h-9 w-[6.5rem]"
+                    data-testid="mobile-settings-surface"
+                    aria-label="Settings surface"
                   >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={CONTROL_LIST_CLASS}>
-                    {CARD_FIELD_STYLES.map((mode) => (
+                    {SETTINGS_SURFACES.map((mode) => (
                       <SelectItem key={mode.value} value={mode.value}>
                         {mode.label}
                       </SelectItem>
@@ -569,112 +490,25 @@ export default function MobileTransformExample() {
                   </SelectContent>
                 </Select>
               </ControlField>
-              <ControlField label="Card columns">
-                <Select
-                  value={`${cardColumns}`}
-                  onValueChange={(value) =>
-                    setCardColumns(
-                      value === "auto"
-                        ? "auto"
-                        : (Number(value) as TypeMobileCardColumns)
-                    )
-                  }
-                >
-                  <SelectTrigger
-                    className="h-9 w-[6.5rem]"
-                    data-testid="mobile-card-columns"
-                    aria-label="Card columns"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className={CONTROL_LIST_CLASS}>
-                    {CARD_COLUMN_COUNTS.map((mode) => (
-                      <SelectItem key={mode.value} value={`${mode.value}`}>
-                        {mode.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ControlField>
-              <ControlField label="Fields shown">
-                <Select
-                  value={`${cardFieldLimit}`}
-                  onValueChange={(value) =>
-                    setCardFieldLimit(value === "all" ? "all" : Number(value))
-                  }
-                >
-                  <SelectTrigger
-                    className="h-9 w-[6.5rem]"
-                    data-testid="mobile-card-field-limit"
-                    aria-label="Fields shown"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className={CONTROL_LIST_CLASS}>
-                    {CARD_FIELD_LIMITS.map((limit) => (
-                      <SelectItem key={limit} value={`${limit}`}>
-                        {limit === "all" ? "All" : limit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ControlField>
-            </>
-          ) : null}
-          <ControlField label="Breakpoint">
-            <Select
-              value={`${breakpoint}`}
-              onValueChange={(value) => setBreakpoint(Number(value))}
-            >
-              <SelectTrigger
-                className="h-9 w-[7.5rem]"
-                data-testid="mobile-breakpoint"
-                aria-label="Breakpoint"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={CONTROL_LIST_CLASS}>
-                {BREAKPOINTS.map((width) => (
-                  <SelectItem key={width} value={`${width}`}>
-                    ≤ {width}px
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ControlField>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={showToolbar}
-              data-testid="mobile-toolbar-toggle"
-              onCheckedChange={(checked) => setShowToolbar(checked === true)}
-            />
-            Mobile toolbar
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={gridPagination}
-              data-testid="mobile-grid-pagination-toggle"
-              onCheckedChange={(checked) => setGridPagination(checked === true)}
-            />
-            Grid pagination
-          </label>
-          {showSettings ? (
-            <ControlField label="Settings surface">
+            ) : null}
+          </ControlGroup>
+          <ControlGroup title="List rows">
+            <ControlField label="List rows">
               <Select
-                value={settingsSurface}
+                value={listRows}
                 onValueChange={(value) =>
-                  setSettingsSurface(value as TypeMobileSettingsSurface)
+                  setListRows(value as TypeMobileListRows)
                 }
               >
                 <SelectTrigger
-                  className="h-9 w-[6.5rem]"
-                  data-testid="mobile-settings-surface"
-                  aria-label="Settings surface"
+                  className="h-9 w-[7.5rem]"
+                  data-testid="mobile-list-rows"
+                  aria-label="List rows"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={CONTROL_LIST_CLASS}>
-                  {SETTINGS_SURFACES.map((mode) => (
+                  {LIST_ROW_STYLES.map((mode) => (
                     <SelectItem key={mode.value} value={mode.value}>
                       {mode.label}
                     </SelectItem>
@@ -682,61 +516,247 @@ export default function MobileTransformExample() {
                 </SelectContent>
               </Select>
             </ControlField>
+            <ControlField label="List actions">
+              <Select
+                value={listActions}
+                onValueChange={(value) =>
+                  setListActions(value as TypeMobileListActions)
+                }
+              >
+                <SelectTrigger
+                  className="h-9 w-[7.5rem]"
+                  data-testid="mobile-list-actions"
+                  aria-label="List actions"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={CONTROL_LIST_CLASS}>
+                  {LIST_ACTION_PLACEMENTS.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value}>
+                      {mode.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ControlField>
+            {variant === "list" ? (
+              <ControlField label="Action side">
+                <Select
+                  value={listActionsSide}
+                  onValueChange={(value) =>
+                    setListActionsSide(value as TypeMobileListActionsSide)
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[6.5rem]"
+                    data-testid="mobile-list-actions-side"
+                    aria-label="Action side"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {LIST_ACTION_SIDES.map((mode) => (
+                      <SelectItem key={mode.value} value={mode.value}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+            ) : null}
+            {variant === "list" ? (
+              <ControlField label="Label fields">
+                <Select
+                  value={`${listFieldLimit}`}
+                  onValueChange={(value) =>
+                    setListFieldLimit(value === "all" ? "all" : Number(value))
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[6.5rem]"
+                    data-testid="mobile-list-field-limit"
+                    aria-label="Label fields"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {LIST_FIELD_LIMITS.map((limit) => (
+                      <SelectItem key={limit} value={`${limit}`}>
+                        {limit === "all" ? "All" : limit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+            ) : null}
+            {variant === "list" ? (
+              <label className="flex items-center gap-2 pb-2 text-sm">
+                <Checkbox
+                  checked={pinnedListFields}
+                  data-testid="mobile-list-pinned-fields-toggle"
+                  onCheckedChange={(checked) =>
+                    setPinnedListFields(checked === true)
+                  }
+                />
+                Pin status + revenue
+              </label>
+            ) : null}
+            {variant === "list" ? (
+              <ControlField label="Row expand">
+                <Select
+                  value={listExpand}
+                  onValueChange={(value) =>
+                    setListExpand(value as TypeMobileListExpand)
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[7.5rem]"
+                    data-testid="mobile-list-expand"
+                    aria-label="Row expand"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {LIST_EXPAND_MODES.map((mode) => (
+                      <SelectItem key={mode.value} value={mode.value}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+            ) : null}
+            {variant === "list" && listExpand !== "none" ? (
+              <label className="flex items-center gap-2 pb-2 text-sm">
+                <Checkbox
+                  checked={rowExpandToggle}
+                  data-testid="mobile-row-expand-toggle"
+                  onCheckedChange={(checked) =>
+                    setRowExpandToggle(checked === true)
+                  }
+                />
+                Chevron
+              </label>
+            ) : null}
+          </ControlGroup>
+          {variant === "cards" || listExpand !== "none" ? (
+            <ControlGroup title="Cards">
+              <>
+                <ControlField label="Card fields">
+                  <Select
+                    value={cardFields}
+                    onValueChange={(value) =>
+                      setCardFields(value as TypeMobileCardFields)
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-9 w-[7.5rem]"
+                      data-testid="mobile-card-fields"
+                      aria-label="Card fields"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={CONTROL_LIST_CLASS}>
+                      {CARD_FIELD_STYLES.map((mode) => (
+                        <SelectItem key={mode.value} value={mode.value}>
+                          {mode.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ControlField>
+                <ControlField label="Card columns">
+                  <Select
+                    value={`${cardColumns}`}
+                    onValueChange={(value) =>
+                      setCardColumns(
+                        value === "auto"
+                          ? "auto"
+                          : (Number(value) as TypeMobileCardColumns)
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-9 w-[6.5rem]"
+                      data-testid="mobile-card-columns"
+                      aria-label="Card columns"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={CONTROL_LIST_CLASS}>
+                      {CARD_COLUMN_COUNTS.map((mode) => (
+                        <SelectItem key={mode.value} value={`${mode.value}`}>
+                          {mode.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ControlField>
+                <ControlField label="Fields shown">
+                  <Select
+                    value={`${cardFieldLimit}`}
+                    onValueChange={(value) =>
+                      setCardFieldLimit(value === "all" ? "all" : Number(value))
+                    }
+                  >
+                    <SelectTrigger
+                      className="h-9 w-[6.5rem]"
+                      data-testid="mobile-card-field-limit"
+                      aria-label="Fields shown"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={CONTROL_LIST_CLASS}>
+                      {CARD_FIELD_LIMITS.map((limit) => (
+                        <SelectItem key={limit} value={`${limit}`}>
+                          {limit === "all" ? "All" : limit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ControlField>
+              </>
+            </ControlGroup>
           ) : null}
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={manyColumns}
-              data-testid="mobile-many-columns-toggle"
-              onCheckedChange={(checked) => setManyColumns(checked === true)}
-            />
-            24 columns
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={showSettings}
-              data-testid="mobile-settings-toggle"
-              onCheckedChange={(checked) => setShowSettings(checked === true)}
-            />
-            Settings button
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={hostHeader}
-              data-testid="mobile-host-header-toggle"
-              onCheckedChange={(checked) => setHostHeader(checked === true)}
-            />
-            Mock host header
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <Checkbox
-              checked={matchStickyOffset}
-              disabled={!hostHeader}
-              data-testid="mobile-sticky-offset-toggle"
-              onCheckedChange={(checked) =>
-                setMatchStickyOffset(checked === true)
-              }
-            />
-            stickyOffset: {hostHeader && matchStickyOffset ? "56" : "0"}
-          </label>
-          <output
-            className="ml-auto pb-2 text-xs text-muted-foreground"
-            data-testid="mobile-variant-output"
-          >
+          <ControlGroup title="Harness, temporary">
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={manyColumns}
+                data-testid="mobile-many-columns-toggle"
+                onCheckedChange={(checked) => setManyColumns(checked === true)}
+              />
+              24 columns
+            </label>
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={hostHeader}
+                data-testid="mobile-host-header-toggle"
+                onCheckedChange={(checked) => setHostHeader(checked === true)}
+              />
+              Mock host header
+            </label>
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={matchStickyOffset}
+                disabled={!hostHeader}
+                data-testid="mobile-sticky-offset-toggle"
+                onCheckedChange={(checked) =>
+                  setMatchStickyOffset(checked === true)
+                }
+              />
+              stickyOffset: {hostHeader && matchStickyOffset ? "56" : "0"}
+            </label>
+          </ControlGroup>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <output data-testid="mobile-variant-output">
             Variant: {variant}
           </output>
+          <output data-testid="mobile-action-output">{lastAction}</output>
+          <output data-testid="mobile-search-columns-output">
+            Searched: {searchColumnIds ? searchColumnIds.join(", ") : "all"}
+          </output>
         </div>
-        <output
-          className="block text-sm text-muted-foreground"
-          data-testid="mobile-action-output"
-        >
-          {lastAction}
-        </output>
-        <output
-          className="block text-xs text-muted-foreground"
-          data-testid="mobile-search-columns-output"
-        >
-          Searched: {searchColumnIds ? searchColumnIds.join(", ") : "all"}
-        </output>
       </div>
       {/* No sizing wrapper: `minHeight`/`maxHeight` replace it, and `flex` covers
           a flex parent with a definite height. */}
