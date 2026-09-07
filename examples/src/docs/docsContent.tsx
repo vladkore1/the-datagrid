@@ -3603,7 +3603,26 @@ type TypeSize = { width: number; height: number };`}
           which defaults to half of the muted token. The fields under a row's
           label sit in columns of one width so they line up down the list, and{" "}
           <code>--tdg-mobile-summary-column</code> sets that width, 6rem by
-          default. The pager and the Show more button read the{" "}
+          default.
+        </p>
+        <p>
+          The layout's spacing is tokenised so an application can retune it
+          without forking a component. A list row reads{" "}
+          <code>--tdg-mobile-row-padding-x</code> /{" "}
+          <code>--tdg-mobile-row-padding-y</code> and{" "}
+          <code>--tdg-mobile-row-gap</code>; the fields under its label read{" "}
+          <code>--tdg-mobile-summary-gap-x</code> /{" "}
+          <code>--tdg-mobile-summary-gap-y</code>,{" "}
+          <code>--tdg-mobile-summary-label-gap</code> for the distance between a
+          label and its value, and <code>--tdg-mobile-summary-margin-top</code>.
+          A card reads <code>--tdg-mobile-card-padding</code>,{" "}
+          <code>--tdg-mobile-card-gap</code> and{" "}
+          <code>--tdg-mobile-card-field-gap-x</code> /{" "}
+          <code>--tdg-mobile-card-field-gap-y</code>. Every default is the value
+          the layout ships with, so setting none of them changes nothing.
+        </p>
+        <p>
+          The pager and the Show more button read the{" "}
           <code>--tdg-mobile-pagination-*</code> and{" "}
           <code>--tdg-mobile-show-more-*</code> tokens.
         </p>

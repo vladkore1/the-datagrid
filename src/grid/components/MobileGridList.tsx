@@ -960,7 +960,7 @@ export function MobileGridList({
   const renderDetailList = (cells: GridCell[], className: string) => (
     <dl
       className={cn(
-        "tdg-mobile-card-fields grid gap-x-5 gap-y-3",
+        "tdg-mobile-card-fields grid",
         cardFieldColumnsClass,
         className
       )}
@@ -1154,7 +1154,7 @@ export function MobileGridList({
       return (
         <article
           className={cn(
-            "tdg-mobile-row min-w-0 px-3 py-3",
+            "tdg-mobile-row min-w-0",
             bottomListActions
               ? "flex flex-col gap-2"
               : "flex flex-wrap items-center gap-3",
@@ -1184,7 +1184,7 @@ export function MobileGridList({
         >
           <div
             className={cn(
-              "flex min-w-0 items-center gap-3",
+              "tdg-mobile-row-line flex min-w-0 items-center",
               bottomListActions ? "w-full" : "contents"
             )}
           >
@@ -1211,11 +1211,11 @@ export function MobileGridList({
                 /* Columns of one width rather than a flowing line: with fields
                    of differing lengths, one row would fit them all and the next
                    would wrap, leaving nothing lined up down the list. */
-                <div className="mt-0.5 grid min-w-0 gap-x-3 gap-y-0.5 text-xs text-muted-foreground [grid-template-columns:repeat(auto-fill,minmax(var(--tdg-mobile-summary-column,6rem),1fr))]">
+                <div className="tdg-mobile-row-summary grid min-w-0 text-xs text-muted-foreground">
                   {listDetailCells.map((cell) => (
                     <span
                       key={cell.id}
-                      className="flex min-w-0 items-center gap-1"
+                      className="tdg-mobile-row-field flex min-w-0 items-center"
                     >
                       <span className="shrink-0 opacity-70">
                         {cellLabel(cell)}
@@ -1303,13 +1303,13 @@ export function MobileGridList({
     return (
       <article
         className={cn(
-          "tdg-mobile-card rounded-md border bg-background p-4 shadow-sm [border-color:var(--tdg-grid-border-color)]",
+          "tdg-mobile-card rounded-md border bg-background shadow-sm [border-color:var(--tdg-grid-border-color)]",
           stateClassName
         )}
         {...rowAttributes}
         {...rowHandlers}
       >
-        <header className="flex min-w-0 items-start gap-3">
+        <header className="tdg-mobile-card-header flex min-w-0 items-start">
           {hierarchyControls}
           {checkboxCell ? (
             <div className="mt-0.5 shrink-0">
