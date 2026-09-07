@@ -215,7 +215,7 @@ export default function MobileTransformExample() {
   const [pinnedListFields, setPinnedListFields] = useState(false);
   const [listExpand, setListExpand] = useState<TypeMobileListExpand>("click");
   const [rowExpandToggle, setRowExpandToggle] = useState(true);
-  const [cardFields, setCardFields] = useState<TypeMobileCardFields>("inline");
+  const [cardFields, setCardFields] = useState<TypeMobileCardFields>("auto");
   const [cardColumns, setCardColumns] = useState<TypeMobileCardColumns>("auto");
   const [cardFieldLimit, setCardFieldLimit] = useState<number | "all">(6);
   const rows = useMemo(

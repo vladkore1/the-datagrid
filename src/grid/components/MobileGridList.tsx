@@ -210,9 +210,6 @@ const MENU_SCROLL_BOUND: React.CSSProperties = {
   overflowY: "auto",
 };
 
-const INLINE_FIELD_TEMPLATE =
-  "[grid-template-columns:var(--tdg-mobile-card-label-width,40%)_minmax(0,1fr)]";
-
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
@@ -369,14 +366,13 @@ export function MobileGridList({
       : undefined;
   const bottomListActions = listActions === "bottom";
   const leadingListActions = listActionsSide === "start";
-  const inlineCardFields = cardFields === "inline";
   const rowsExpandable = listExpand !== "none";
   const cardFieldColumnsClass =
     cardColumns === 2
       ? "grid-cols-2"
       : cardColumns === 1
         ? "grid-cols-1"
-        : "grid-cols-1 min-[540px]:grid-cols-2";
+        : "grid-cols-1 min-[640px]:grid-cols-2";
   // A boxed group inside its own scrollport is cropped flush at both ends, so
   // nothing reads as the start or the end of the run. Page scroll ends against
   // the document instead, and the other row styles have their own gaps.
@@ -967,41 +963,20 @@ export function MobileGridList({
       data-card-fields={cardFields}
       data-card-columns={cardColumns}
     >
-      {inlineCardFields
-        ? cells.map((cell) => (
-            <div
-              key={cell.id}
-              className={cn(
-                "grid min-w-0 items-baseline gap-x-3",
-                INLINE_FIELD_TEMPLATE
-              )}
-            >
-              <dt className="truncate text-xs font-medium text-muted-foreground">
-                {cellLabel(cell)}
-              </dt>
-              <dd
-                className={valueClassName(cell)}
-                data-slot="mobile-cell"
-                data-cell-role="detail"
-              >
-                {renderCellContent(cell)}
-              </dd>
-            </div>
-          ))
-        : cells.map((cell) => (
-            <div key={cell.id} className="min-w-0">
-              <dt className="text-xs font-medium text-muted-foreground">
-                {cellLabel(cell)}
-              </dt>
-              <dd
-                className={cn("mt-0.5", valueClassName(cell))}
-                data-slot="mobile-cell"
-                data-cell-role="detail"
-              >
-                {renderCellContent(cell)}
-              </dd>
-            </div>
-          ))}
+      {cells.map((cell) => (
+        <div key={cell.id} className="tdg-mobile-card-field min-w-0">
+          <dt className="text-xs font-medium text-muted-foreground">
+            {cellLabel(cell)}
+          </dt>
+          <dd
+            className={valueClassName(cell)}
+            data-slot="mobile-cell"
+            data-cell-role="detail"
+          >
+            {renderCellContent(cell)}
+          </dd>
+        </div>
+      ))}
     </dl>
   );
 

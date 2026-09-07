@@ -1584,7 +1584,7 @@ export type TypeMobileListActionsSide = "start" | "end";
 export type TypeMobileListExpand = "none" | "click" | "chevron";
 
 /** Where the mobile card variant puts a field's label. */
-export type TypeMobileCardFields = "stacked" | "inline";
+export type TypeMobileCardFields = "stacked" | "inline" | "auto";
 
 /** How many field pairs a mobile card lays out per row. */
 export type TypeMobileCardColumns = 1 | 2 | "auto";
@@ -1700,17 +1700,21 @@ export type TypeMobileTransformProps = {
   /**
    * Where a card field puts its label. `"inline"` puts the value to the right
    * of the label and gives every label the same width, so the values line up
-   * on one axis down the card instead of starting wherever the label above
-   * them ended; `"stacked"` sits the label above the value.
+   * on one axis down the card; `"stacked"` sits the label above the value.
    *
-   * Defaults to `"inline"` for a grid that passes this configuration object,
-   * and to `"stacked"` for one that only sets `allowMobileTransform`.
+   * `"auto"` pairs the two with the column count: inline while the fields are
+   * in one column, stacked once they are in two, where each field holds half a
+   * card.
+   *
+   * Defaults to `"auto"` for a grid that passes this configuration object, and
+   * to `"stacked"` for one that only sets `allowMobileTransform`.
    */
   cardFields?: TypeMobileCardFields;
 
   /**
-   * Field pairs a card lays out per row. `"auto"` (default) is one below 540px
-   * and two above it; `2` keeps two at any width, which suits short values and
+   * Field pairs a card lays out per row. `"auto"` (default) is one below 768px
+   * and two above it, which is where a field is still wide enough for a label
+   * beside a value; `2` keeps two at any width, which suits short values and
    * gets cramped with long ones.
    */
   cardColumns?: TypeMobileCardColumns;

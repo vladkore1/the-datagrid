@@ -706,8 +706,9 @@ const mobileTransformPropsDefinition = `type TypeMobileTransformProps = {
   // "inline" when this object is passed, "stacked" without it.
   cardFields?: "stacked" | "inline";
 
-  // Field pairs a card lays out per row. "auto" is one below 540px and
-  // two above it; 2 keeps two at any width. Default "auto".
+  // Field pairs a card lays out per row. "auto" is one below 768px
+  // and two above it, the width at which a field still fits a label
+  // beside a value; 2 keeps two at any width. Default "auto".
   cardColumns?: 1 | 2 | "auto";
 
   // Label column width under cardFields: "inline". A number is px, a

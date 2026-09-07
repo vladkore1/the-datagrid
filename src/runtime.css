@@ -2682,6 +2682,85 @@
   gap: var(--tdg-mobile-card-gap, 0.75rem);
 }
 
+/*
+ * A card field stacks its label over its value by default; `inline` puts them
+ * side by side against one shared label track, which is what lines the values
+ * up down a card, and `auto` asks for that only while the fields are in one
+ * column. Every shape renders the same markup, so the choice lives here rather
+ * than in a second branch of the component. The label track is
+ * `--tdg-mobile-card-label-width`, which `cardLabelWidth` also sets.
+ */
+.tdg-root .tdg-mobile-card-field > dd {
+  margin-top: 0.125rem;
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field {
+  display: grid;
+  grid-template-columns: var(--tdg-mobile-card-label-width, 40%) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--tdg-mobile-card-label-gap, 0.75rem);
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field
+  > dd,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field
+  > dd {
+  margin-top: 0;
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field
+  > dt,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field
+  > dt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Below the width where the fields split in two, `auto` is inline. */
+@media (max-width: 639.98px) {
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field {
+    display: grid;
+    grid-template-columns: var(--tdg-mobile-card-label-width, 40%) minmax(
+        0,
+        1fr
+      );
+    align-items: baseline;
+    column-gap: var(--tdg-mobile-card-label-gap, 0.75rem);
+  }
+
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field
+    > dd {
+    margin-top: 0;
+  }
+
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field
+    > dt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .tdg-root .tdg-mobile-card-fields {
   column-gap: var(--tdg-mobile-card-field-gap-x, 1.25rem);
   row-gap: var(--tdg-mobile-card-field-gap-y, 0.75rem);
