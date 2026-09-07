@@ -690,8 +690,9 @@ const mobileTransformPropsDefinition = `type TypeMobileTransformProps = {
   listFieldLimit?: number | "all";
 
   // Lets a list row open a panel of every field it has, laid out with
-  // the card* options below. "chevron" is the affordance alone,
-  // "click" the whole row as well. Default "none".
+  // the card* options below. "click" makes the whole row a target as
+  // well as the chevron, "chevron" the affordance alone. Defaults to
+  // "click" when this object is passed, "none" without it.
   listExpand?: "none" | "chevron" | "click";
 
   // The chevron on an expandable row. false leaves the row tap as the
@@ -722,9 +723,9 @@ const mobileTransformPropsDefinition = `type TypeMobileTransformProps = {
   // Default true.
   showToolbar?: boolean;
 
-  // Gathers the cards/list choice, the column picker and the search
-  // scope behind one settings button beside the search box, for a bar
-  // that has run out of room. Sort keeps its own button. Default false.
+  // Gathers the cards/list choice, sort, the column picker and the
+  // search scope behind one settings button beside the search box.
+  // Defaults to true when this object is passed, false without it.
   showSettings?: boolean;
 
   // What that button opens. "drawer" (default) slides in from the

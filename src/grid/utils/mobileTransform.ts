@@ -146,7 +146,10 @@ export function resolveMobileTransform(params: {
       config.listFieldLimit,
       listFieldIds ? listFieldIds.length : MOBILE_LIST_DEFAULT_FIELD_LIMIT
     ),
-    listExpand: config.listExpand ?? "none",
+    // Both follow the configuration object rather than the old
+    // `allowMobileTransform` path, which keeps its original behaviour.
+    listExpand:
+      config.listExpand ?? (hasMobileTransformConfig ? "click" : "none"),
     showRowExpandToggle: config.showRowExpandToggle ?? true,
     cardFields: config.cardFields ?? "stacked",
     cardColumns: config.cardColumns ?? "auto",
@@ -163,7 +166,7 @@ export function resolveMobileTransform(params: {
     showSort: config.showSort ?? true,
     showColumnPicker: config.showColumnPicker,
     showResultCount: config.showResultCount ?? true,
-    showSettings: config.showSettings ?? false,
+    showSettings: config.showSettings ?? hasMobileTransformConfig,
     settingsSurface: config.settingsSurface ?? "drawer",
     searchColumnIds: config.searchColumnIds,
     defaultSearchColumnIds: config.defaultSearchColumnIds,

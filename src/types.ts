@@ -1676,8 +1676,11 @@ export type TypeMobileTransformProps = {
 
   /**
    * Lets a list row open a panel of every field it has, laid out with the
-   * `card*` options. `"chevron"` (the affordance alone) and `"click"` (the
-   * whole row as well as the affordance) opt in; `"none"` is the default.
+   * `card*` options. `"click"` makes the whole row a target as well as the
+   * chevron, `"chevron"` the affordance alone, and `"none"` turns it off.
+   *
+   * Defaults to `"click"` for a grid that passes this configuration object,
+   * and to `"none"` for one that only sets `allowMobileTransform`.
    *
    * The row's own `onRowClick` still fires under `"click"`, and a tap that
    * lands on a control inside the row - an action cell, a checkbox, a link -
@@ -1762,12 +1765,13 @@ export type TypeMobileTransformProps = {
 
   /**
    * Gathers the toolbar's controls behind one settings button beside the
-   * search box: the cards/list choice, the column picker, and the search-scope
-   * picker. Defaults to `false`, which leaves each control in the bar.
+   * search box: the cards/list choice, sort, the column picker, and the
+   * search-scope picker.
    *
-   * The sort control keeps its own button either way, since its panel is not
-   * menu-shaped. `showVariantToggle` / `showColumnPicker` still decide whether
-   * a control exists at all; this decides where it lives.
+   * Defaults to `true` for a grid that passes this configuration object, and
+   * to `false` for one that only sets `allowMobileTransform`, which keeps each
+   * control in the bar. `showVariantToggle` / `showColumnPicker` still decide
+   * whether a control exists at all; this decides where it lives.
    */
   showSettings?: boolean;
 

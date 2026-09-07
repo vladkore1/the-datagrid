@@ -194,7 +194,7 @@ export default function MobileTransformExample() {
   const [showToolbar, setShowToolbar] = useState(true);
   // TEMPORARY harness for the sticky offset. Remove before committing.
   const [hostHeader, setHostHeader] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
   const [settingsSurface, setSettingsSurface] =
     useState<TypeMobileSettingsSurface>("drawer");
   // TEMPORARY: stands in for a CWeb table's column count. Remove with the mock
@@ -213,7 +213,7 @@ export default function MobileTransformExample() {
     useState<TypeMobileListActionsSide>("end");
   const [listFieldLimit, setListFieldLimit] = useState<number | "all">(3);
   const [pinnedListFields, setPinnedListFields] = useState(false);
-  const [listExpand, setListExpand] = useState<TypeMobileListExpand>("none");
+  const [listExpand, setListExpand] = useState<TypeMobileListExpand>("click");
   const [rowExpandToggle, setRowExpandToggle] = useState(true);
   const [cardFields, setCardFields] = useState<TypeMobileCardFields>("stacked");
   const [cardColumns, setCardColumns] = useState<TypeMobileCardColumns>("auto");
