@@ -2634,6 +2634,28 @@
 }
 
 /* Themable without reaching into the classes. */
+/*
+ * The surface is the keyboard target, and the browser rings it as soon as a key
+ * is pressed, which puts a box around the whole list on top of the active row's
+ * own outline. The active row is the indicator; the container does not need one
+ * as well.
+ */
+.tdg-root:has([data-slot="mobile-grid-list"]) .tdg-surface:focus-visible {
+  outline: none !important;
+}
+
+/*
+ * And the row's outline is painted from here rather than from the component, so
+ * that it follows the surface's own `:focus-visible`: pressing a row to open it
+ * leaves no outline behind, while arrow keys still say which row is active.
+ */
+.tdg-surface:focus-visible
+  [data-slot="mobile-grid-list"][data-active-indicator="true"]
+  .tdg-mobile-row[data-active="true"] {
+  outline: 2px solid var(--tdg-color-ring, var(--ring, oklch(0.708 0 0)));
+  outline-offset: -2px;
+}
+
 .tdg-mobile-pagination {
   color: var(--tdg-mobile-pagination-color, inherit);
   font-size: var(--tdg-mobile-pagination-font-size, 0.75rem);

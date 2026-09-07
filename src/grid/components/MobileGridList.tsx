@@ -1036,8 +1036,6 @@ export function MobileGridList({
         cn(
           "tdg-row--focused InovuaReactDataGrid__row--focused",
           rowFocusClassName,
-          showActiveRowIndicator &&
-            "outline outline-2 outline-offset-[-2px] outline-ring",
           showActiveRowIndicator ? activeRowIndicatorClassName : ""
         ),
       rowIsDisabled &&
@@ -2095,6 +2093,7 @@ export function MobileGridList({
         data-list-actions={listActions}
         data-card-fields={cardFields}
         data-card-columns={cardColumns}
+        data-active-indicator={showActiveRowIndicator ? "true" : undefined}
         onKeyDown={handleEscape}
       >
         {/* Scopes the sticky toolbar to the rows, so it slides away with the
@@ -2123,6 +2122,7 @@ export function MobileGridList({
       data-list-actions={listActions}
       data-card-fields={cardFields}
       data-card-columns={cardColumns}
+      data-active-indicator={showActiveRowIndicator ? "true" : undefined}
       onKeyDown={handleEscape}
     >
       {toolbar}
