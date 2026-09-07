@@ -2276,7 +2276,15 @@
   bottom: auto !important;
   width: 100% !important;
   min-width: var(--radix-select-trigger-width) !important;
-  overflow: hidden !important;
+  /*
+   * As with the dropdown shell: clipping the block axis too leaves a list
+   * taller than the space it has with no way to reach the rest of itself. The
+   * cap has to be set here as well, because the component asks for it through
+   * a utility class that this build does not emit.
+   */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-height: var(--radix-select-content-available-height, 60vh) !important;
   background: var(--tdg-select-list-bg) !important;
   color: var(--tdg-select-list-color) !important;
   border-style: solid !important;
