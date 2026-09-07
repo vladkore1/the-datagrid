@@ -1173,11 +1173,6 @@ export function MobileGridList({
             boxedListRows &&
               isLastRow &&
               "rounded-b-[var(--tdg-mobile-list-radius,0.5rem)]",
-            // Last, so it outranks the row's own surface: an open row and its
-            // fields have to read as one block rather than two rows. Kept
-            // faint, because the block is tall and the tint is only there to
-            // say where it starts and ends.
-            rowExpanded && "bg-muted/20",
             stateClassName
           )}
           {...rowAttributes}

@@ -2635,6 +2635,20 @@
 
 /* Themable without reaching into the classes. */
 /*
+ * An open row and its fields have to read as one block rather than as two rows.
+ * Painted here rather than with a utility class: the row already carries a
+ * background from a token, and two background classes on one element leave the
+ * winner to stylesheet order. The token is near-white, so it is used at full
+ * strength; anything faded reads as no change at all.
+ */
+.tdg-root .tdg-mobile-row[data-expanded="true"] {
+  background: var(
+    --tdg-mobile-row-expanded-bg,
+    var(--muted, oklch(0.97 0 0))
+  ) !important;
+}
+
+/*
  * The surface is the keyboard target, and the browser rings it as soon as a key
  * is pressed, which puts a box around the whole list on top of the active row's
  * own outline. The active row is the indicator; the container does not need one
