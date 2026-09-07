@@ -11,7 +11,12 @@ import {
 import ReactDataGrid, {
   type CellProps,
   type TypeColumns,
+  type TypeMobileCardColumns,
+  type TypeMobileCardFields,
   type TypeMobileListActions,
+  type TypeMobileListActionsSide,
+  type TypeMobileSettingsSurface,
+  type TypeMobileListExpand,
   type TypeMobileListRows,
   type TypeMobileTransformOverflow,
   type TypeMobileTransformScroll,
@@ -59,6 +64,71 @@ const LIST_ACTION_PLACEMENTS: {
   { value: "bottom", label: "Bottom" },
 ];
 
+/** TEMPORARY: pads the column set out to a CWeb-sized table. */
+const FILLER_COLUMNS: TypeColumns = [
+  "Contract",
+  "Renewal",
+  "Region",
+  "Segment",
+  "Tier",
+  "Reseller",
+  "Licences",
+  "Quota",
+  "Domains",
+  "Aliases",
+  "Retention",
+  "Policy",
+  "Gateway",
+  "Ruleset",
+].map((header, index) => ({
+  name: `filler${index}`,
+  header,
+  defaultWidth: 140,
+}));
+
+const SETTINGS_SURFACES: {
+  value: TypeMobileSettingsSurface;
+  label: string;
+}[] = [
+  { value: "drawer", label: "Drawer" },
+  { value: "panel", label: "Panel" },
+];
+
+const LIST_ACTION_SIDES: {
+  value: TypeMobileListActionsSide;
+  label: string;
+}[] = [
+  { value: "end", label: "End" },
+  { value: "start", label: "Start" },
+];
+
+const LIST_FIELD_LIMITS: (number | "all")[] = [1, 2, 3, "all"];
+
+/** Two columns a consumer might pin under the label instead of the first few. */
+const PINNED_LIST_FIELD_IDS = ["status", "revenue"];
+
+const LIST_EXPAND_MODES: { value: TypeMobileListExpand; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "chevron", label: "Chevron" },
+  { value: "click", label: "Row click" },
+];
+
+const CARD_FIELD_STYLES: { value: TypeMobileCardFields; label: string }[] = [
+  { value: "stacked", label: "Stacked" },
+  { value: "inline", label: "Inline" },
+];
+
+const CARD_COLUMN_COUNTS: {
+  value: TypeMobileCardColumns;
+  label: string;
+}[] = [
+  { value: "auto", label: "Auto" },
+  { value: 1, label: "One" },
+  { value: 2, label: "Two" },
+];
+
+const CARD_FIELD_LIMITS: (number | "all")[] = [3, 6, "all"];
+
 const BREAKPOINTS = [640, 768, 1024, 1280];
 
 /** Stands in for a renderer that fills its table cell to centre against the row. */
@@ -105,9 +175,32 @@ export default function MobileTransformExample() {
   const [variant, setVariant] = useState<TypeMobileTransformVariant>("list");
   const [breakpoint, setBreakpoint] = useState(1024);
   const [showToolbar, setShowToolbar] = useState(true);
+  // TEMPORARY harness for the sticky offset. Remove before committing.
+  const [hostHeader, setHostHeader] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsSurface, setSettingsSurface] =
+    useState<TypeMobileSettingsSurface>("drawer");
+  // TEMPORARY: stands in for a CWeb table's column count. Remove with the mock
+  // header below.
+  const [manyColumns, setManyColumns] = useState(false);
+  // Stands in for a consumer that persists the scope, as CWeb does for column
+  // visibility. TEMPORARY: drop with the mock header below.
+  const [searchColumnIds, setSearchColumnIds] = useState<string[] | undefined>(
+    undefined
+  );
+  const [matchStickyOffset, setMatchStickyOffset] = useState(true);
   const [listRows, setListRows] = useState<TypeMobileListRows>("divided");
   const [listActions, setListActions] =
     useState<TypeMobileListActions>("inline");
+  const [listActionsSide, setListActionsSide] =
+    useState<TypeMobileListActionsSide>("end");
+  const [listFieldLimit, setListFieldLimit] = useState<number | "all">(3);
+  const [pinnedListFields, setPinnedListFields] = useState(false);
+  const [listExpand, setListExpand] = useState<TypeMobileListExpand>("none");
+  const [rowExpandToggle, setRowExpandToggle] = useState(true);
+  const [cardFields, setCardFields] = useState<TypeMobileCardFields>("stacked");
+  const [cardColumns, setCardColumns] = useState<TypeMobileCardColumns>("auto");
+  const [cardFieldLimit, setCardFieldLimit] = useState<number | "all">(6);
   const rows = useMemo(
     () =>
       Array.from({ length: 10_000 }, (_, index) => ({
@@ -230,8 +323,9 @@ export default function MobileTransformExample() {
           </Button>
         ),
       },
+      ...(manyColumns ? FILLER_COLUMNS : []),
     ],
-    []
+    [manyColumns]
   );
 
   return (
@@ -250,9 +344,7 @@ export default function MobileTransformExample() {
         .filter(Boolean)
         .join(" ")}
       data-theme={gridThemeBase === "default" ? undefined : gridTheme}
-      data-theme-base={
-        gridThemeBase === "default" ? undefined : gridThemeBase
-      }
+      data-theme-base={gridThemeBase === "default" ? undefined : gridThemeBase}
       data-testid="mobile-transform-example"
     >
       {/* A dashed panel so the harness never reads as part of the grid below. */}
@@ -353,6 +445,182 @@ export default function MobileTransformExample() {
               </SelectContent>
             </Select>
           </ControlField>
+          {variant === "list" ? (
+            <ControlField label="Action side">
+              <Select
+                value={listActionsSide}
+                onValueChange={(value) =>
+                  setListActionsSide(value as TypeMobileListActionsSide)
+                }
+              >
+                <SelectTrigger
+                  className="h-9 w-[6.5rem]"
+                  data-testid="mobile-list-actions-side"
+                  aria-label="Action side"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={CONTROL_LIST_CLASS}>
+                  {LIST_ACTION_SIDES.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value}>
+                      {mode.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ControlField>
+          ) : null}
+          {variant === "list" ? (
+            <ControlField label="Label fields">
+              <Select
+                value={`${listFieldLimit}`}
+                onValueChange={(value) =>
+                  setListFieldLimit(value === "all" ? "all" : Number(value))
+                }
+              >
+                <SelectTrigger
+                  className="h-9 w-[6.5rem]"
+                  data-testid="mobile-list-field-limit"
+                  aria-label="Label fields"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={CONTROL_LIST_CLASS}>
+                  {LIST_FIELD_LIMITS.map((limit) => (
+                    <SelectItem key={limit} value={`${limit}`}>
+                      {limit === "all" ? "All" : limit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ControlField>
+          ) : null}
+          {variant === "list" ? (
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={pinnedListFields}
+                data-testid="mobile-list-pinned-fields-toggle"
+                onCheckedChange={(checked) =>
+                  setPinnedListFields(checked === true)
+                }
+              />
+              Pin status + revenue
+            </label>
+          ) : null}
+          {variant === "list" ? (
+            <ControlField label="Row expand">
+              <Select
+                value={listExpand}
+                onValueChange={(value) =>
+                  setListExpand(value as TypeMobileListExpand)
+                }
+              >
+                <SelectTrigger
+                  className="h-9 w-[7.5rem]"
+                  data-testid="mobile-list-expand"
+                  aria-label="Row expand"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={CONTROL_LIST_CLASS}>
+                  {LIST_EXPAND_MODES.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value}>
+                      {mode.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ControlField>
+          ) : null}
+          {variant === "list" && listExpand !== "none" ? (
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <Checkbox
+                checked={rowExpandToggle}
+                data-testid="mobile-row-expand-toggle"
+                onCheckedChange={(checked) =>
+                  setRowExpandToggle(checked === true)
+                }
+              />
+              Chevron
+            </label>
+          ) : null}
+          {variant === "cards" || listExpand !== "none" ? (
+            <>
+              <ControlField label="Card fields">
+                <Select
+                  value={cardFields}
+                  onValueChange={(value) =>
+                    setCardFields(value as TypeMobileCardFields)
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[7.5rem]"
+                    data-testid="mobile-card-fields"
+                    aria-label="Card fields"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {CARD_FIELD_STYLES.map((mode) => (
+                      <SelectItem key={mode.value} value={mode.value}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+              <ControlField label="Card columns">
+                <Select
+                  value={`${cardColumns}`}
+                  onValueChange={(value) =>
+                    setCardColumns(
+                      value === "auto"
+                        ? "auto"
+                        : (Number(value) as TypeMobileCardColumns)
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[6.5rem]"
+                    data-testid="mobile-card-columns"
+                    aria-label="Card columns"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {CARD_COLUMN_COUNTS.map((mode) => (
+                      <SelectItem key={mode.value} value={`${mode.value}`}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+              <ControlField label="Fields shown">
+                <Select
+                  value={`${cardFieldLimit}`}
+                  onValueChange={(value) =>
+                    setCardFieldLimit(value === "all" ? "all" : Number(value))
+                  }
+                >
+                  <SelectTrigger
+                    className="h-9 w-[6.5rem]"
+                    data-testid="mobile-card-field-limit"
+                    aria-label="Fields shown"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={CONTROL_LIST_CLASS}>
+                    {CARD_FIELD_LIMITS.map((limit) => (
+                      <SelectItem key={limit} value={`${limit}`}>
+                        {limit === "all" ? "All" : limit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlField>
+            </>
+          ) : null}
           <ControlField label="Breakpoint">
             <Select
               value={`${breakpoint}`}
@@ -390,6 +658,66 @@ export default function MobileTransformExample() {
             />
             Grid pagination
           </label>
+          {showSettings ? (
+            <ControlField label="Settings surface">
+              <Select
+                value={settingsSurface}
+                onValueChange={(value) =>
+                  setSettingsSurface(value as TypeMobileSettingsSurface)
+                }
+              >
+                <SelectTrigger
+                  className="h-9 w-[6.5rem]"
+                  data-testid="mobile-settings-surface"
+                  aria-label="Settings surface"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className={CONTROL_LIST_CLASS}>
+                  {SETTINGS_SURFACES.map((mode) => (
+                    <SelectItem key={mode.value} value={mode.value}>
+                      {mode.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ControlField>
+          ) : null}
+          <label className="flex items-center gap-2 pb-2 text-sm">
+            <Checkbox
+              checked={manyColumns}
+              data-testid="mobile-many-columns-toggle"
+              onCheckedChange={(checked) => setManyColumns(checked === true)}
+            />
+            24 columns
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm">
+            <Checkbox
+              checked={showSettings}
+              data-testid="mobile-settings-toggle"
+              onCheckedChange={(checked) => setShowSettings(checked === true)}
+            />
+            Settings button
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm">
+            <Checkbox
+              checked={hostHeader}
+              data-testid="mobile-host-header-toggle"
+              onCheckedChange={(checked) => setHostHeader(checked === true)}
+            />
+            Mock host header
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm">
+            <Checkbox
+              checked={matchStickyOffset}
+              disabled={!hostHeader}
+              data-testid="mobile-sticky-offset-toggle"
+              onCheckedChange={(checked) =>
+                setMatchStickyOffset(checked === true)
+              }
+            />
+            stickyOffset: {hostHeader && matchStickyOffset ? "56" : "0"}
+          </label>
           <output
             className="ml-auto pb-2 text-xs text-muted-foreground"
             data-testid="mobile-variant-output"
@@ -403,9 +731,24 @@ export default function MobileTransformExample() {
         >
           {lastAction}
         </output>
+        <output
+          className="block text-xs text-muted-foreground"
+          data-testid="mobile-search-columns-output"
+        >
+          Searched: {searchColumnIds ? searchColumnIds.join(", ") : "all"}
+        </output>
       </div>
       {/* No sizing wrapper: `minHeight`/`maxHeight` replace it, and `flex` covers
           a flex parent with a definite height. */}
+      {hostHeader ? (
+        <div
+          className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          data-testid="mobile-host-header"
+        >
+          <span>Mock host header</span>
+          <span className="text-xs font-normal opacity-80">56px, sticky</span>
+        </div>
+      ) : null}
       <div className="min-w-0" data-testid="mobile-transform-shell">
         <ReactDataGrid
           theme={gridTheme}
@@ -425,7 +768,20 @@ export default function MobileTransformExample() {
             onVariantChange: setVariant,
             listRows,
             listActions,
+            listActionsSide,
+            listFieldLimit,
+            listFieldIds: pinnedListFields ? PINNED_LIST_FIELD_IDS : undefined,
+            listExpand,
+            showRowExpandToggle: rowExpandToggle,
+            cardFields,
+            cardColumns,
+            cardFieldLimit,
             showToolbar,
+            showSettings,
+            settingsSurface,
+            searchColumnIds,
+            onSearchColumnIdsChange: setSearchColumnIds,
+            stickyOffset: hostHeader && matchStickyOffset ? 56 : 0,
             pageSize: 25,
             showMoreStep: 10,
           }}

@@ -675,10 +675,89 @@ const mobileTransformPropsDefinition = `type TypeMobileTransformProps = {
   // carries more than one control. Default "inline".
   listActions?: "inline" | "bottom";
 
+  // Which end of the action line listActions: "bottom" puts the
+  // controls at, mirrored in a right-to-left grid. It also moves
+  // inline actions to the row's leading edge. Default "end".
+  listActionsSide?: "start" | "end";
+
+  // Column ids under a list row's main label, in this order. Unset
+  // takes the row's first fields in column order. A column the viewer
+  // hid through the picker stays hidden either way.
+  listFieldIds?: string[];
+
+  // How many of those show. Default 3, or every id in listFieldIds
+  // when that is set. "all" shows the lot.
+  listFieldLimit?: number | "all";
+
+  // Lets a list row open a panel of every field it has, laid out with
+  // the card* options below. "chevron" is the affordance alone,
+  // "click" the whole row as well. Default "none".
+  listExpand?: "none" | "chevron" | "click";
+
+  // The chevron on an expandable row. false leaves the row tap as the
+  // only way in, so it needs listExpand: "click" and takes the
+  // keyboard route with it. Default true.
+  showRowExpandToggle?: boolean;
+
+  // Where a card field puts its label. "inline" moves the value to the
+  // right of the label and gives every label one shared width, so the
+  // values line up on a single axis down the card. Default "stacked".
+  cardFields?: "stacked" | "inline";
+
+  // Field pairs a card lays out per row. "auto" is one below 540px and
+  // two above it; 2 keeps two at any width. Default "auto".
+  cardColumns?: 1 | 2 | "auto";
+
+  // Label column width under cardFields: "inline". A number is px, a
+  // string is any CSS length or a percentage of the field's own width.
+  // Default "40%", which keeps two columns readable on a phone.
+  cardLabelWidth?: number | string;
+
+  // Fields a card shows before the rest collapse behind its "n more
+  // fields" disclosure. "all" drops the disclosure. Default 6.
+  cardFieldLimit?: number | "all";
+
   // Renders the mobile toolbar: search, the variant toggle, sort, the
   // column picker, the result count. false leaves only the rows.
   // Default true.
   showToolbar?: boolean;
+
+  // Gathers the cards/list choice, the column picker and the search
+  // scope behind one settings button beside the search box, for a bar
+  // that has run out of room. Sort keeps its own button. Default false.
+  showSettings?: boolean;
+
+  // What that button opens. "drawer" (default) slides in from the
+  // trailing edge over the full height; "panel" puts the same
+  // sections inline under the toolbar, dimming nothing and trapping
+  // no focus. Either way the sort control moves in with them.
+  settingsSurface?: "drawer" | "panel";
+
+  // Columns the search reads, controlled. Unset searches every
+  // searchable column; defaultSearchColumnIds seeds the grid's own
+  // state, and onSearchColumnIdsChange reports every change so a
+  // consumer can persist it. The last searched column cannot be
+  // unchecked.
+  searchColumnIds?: string[];
+  defaultSearchColumnIds?: string[];
+  onSearchColumnIdsChange?: (columnIds: string[]) => void;
+
+  // One control of that toolbar each. Search defaults to false for a
+  // grid whose search box is mounted outside it or which renders a
+  // tree, and the column picker to false inside an RDGToolbarProvider;
+  // true brings either back for a desktop toolbar that steps aside at
+  // mobile widths. The other two default to true.
+  showSearch?: boolean;
+  showSort?: boolean;
+  showColumnPicker?: boolean;
+  showResultCount?: boolean;
+
+  // Where the sticky toolbar rests under page scroll, and the room the
+  // pager leaves clear when it returns to the first row. A number is
+  // px; a string is any CSS length, so "var(--app-header-height)"
+  // follows a host header. Set it to the height of whatever the page
+  // keeps fixed above the grid. Default 0.
+  stickyOffset?: number | string;
 
   // Bounds how many rows render on a grid that is not paginated.
   // Default "show-more" under page scroll, else "none". A paginated
@@ -796,7 +875,8 @@ type TypeSortInfo = TypeSingleSortInfo | TypeSingleSortInfo[] | null;`,
 };`,
   },
   TypeCheckboxColumn: {
-    summary: "true for the default checkbox column, or a column that overrides it.",
+    summary:
+      "true for the default checkbox column, or a column that overrides it.",
     reference: {
       group: "reference",
       slug: "types",
@@ -864,9 +944,12 @@ function TypeDefinitionDialog(props: {
   const definition = name ? typeDefinitions[name] : undefined;
 
   return (
-    <Dialog open={Boolean(definition)} onOpenChange={(next) => {
-      if (!next) onClose();
-    }}>
+    <Dialog
+      open={Boolean(definition)}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
       <DialogContent className="tdg-docs-type-dialog">
         <DialogHeader>
           <DialogTitle className="font-mono text-sm">{name}</DialogTitle>
@@ -921,10 +1004,7 @@ function TypeCell(props: { value: string }) {
           <React.Fragment key={`text-${index}`}>{part}</React.Fragment>
         )
       )}
-      <TypeDefinitionDialog
-        name={openName}
-        onClose={() => setOpenName(null)}
-      />
+      <TypeDefinitionDialog name={openName} onClose={() => setOpenName(null)} />
     </>
   );
 }
@@ -1391,7 +1471,7 @@ const reactDataGridPropSections: ReferenceSection[] = [
         type: "boolean",
         defaultValue: "false",
         description:
-          "At widths up to 1024px, replaces the table with the original cards-only mobile layout, including current-page search, single-sort tools, and a hideable-column picker. Pass mobileTransform to opt into list, view-toggle, page-scroll, and row-budget behavior.",
+          "At widths up to 1024px, replaces the table with the original cards-only mobile layout, including current-page search, single-sort tools, and a hideable-column picker. Pass mobileTransform to opt into list, view-toggle, page-scroll, row-budget, card-layout, row-expand, and sticky-offset behavior.",
       },
       {
         name: "mobileTransform",
@@ -2889,7 +2969,7 @@ const columnSections: ReferenceSection[] = [
         type: "boolean",
         defaultValue: "true",
         description:
-          "Excludes the column from optional global search when set to false.",
+          "Excludes the column from search: the optional global search bar, the mobile search box, and the settings surface's searched-columns picker.",
       },
       {
         name: "searchAliases",
@@ -3488,10 +3568,7 @@ type TypeSize = { width: number; height: number };`}
           toggle by default. Omitting it preserves the original cards-only{" "}
           <code>allowMobileTransform</code> layout.
         </p>
-        <CodeBlock
-          code={mobileTransformPropsDefinition}
-          language="ts"
-        />
+        <CodeBlock code={mobileTransformPropsDefinition} language="ts" />
         <p>
           Which column becomes the headline, a labelled field, or a row action
           is a column concern: see <code>mobileRole</code> and{" "}
@@ -3517,10 +3594,9 @@ type TypeSize = { width: number; height: number };`}
         <p>
           The list rows read <code>--tdg-mobile-list-border-color</code>,{" "}
           <code>--tdg-mobile-list-radius</code> and{" "}
-          <code>--tdg-mobile-list-bg</code>, and carry{" "}
-          <code>data-first</code> / <code>data-last</code> for restyling the end
-          caps. The pager and the Show more button read the{" "}
-          <code>--tdg-mobile-pagination-*</code> and{" "}
+          <code>--tdg-mobile-list-bg</code>, and carry <code>data-first</code> /{" "}
+          <code>data-last</code> for restyling the end caps. The pager and the
+          Show more button read the <code>--tdg-mobile-pagination-*</code> and{" "}
           <code>--tdg-mobile-show-more-*</code> tokens.
         </p>
       </div>
@@ -3799,6 +3875,51 @@ const i18nSections: ReferenceSection[] = [
         "mobileListView",
         "List view",
         "Accessible label and title for the list side of the presentation toggle."
+      ),
+      stringI18nRow(
+        "mobileSettings",
+        "Settings",
+        "Accessible label and title for the mobile toolbar's settings button."
+      ),
+      i18nRow(
+        "mobileSearchColumns",
+        "Searched columns",
+        "Heading on the settings entry that picks which columns the search reads."
+      ),
+      i18nRow(
+        "mobileRowView",
+        "Row view",
+        "Heading above the cards/list choice inside the settings menu."
+      ),
+      i18nRow(
+        "mobileSortNone",
+        "None",
+        "Summary on the settings panel's sort section while nothing is sorted."
+      ),
+      i18nRow(
+        "mobileFilterColumns",
+        "Filter columns",
+        "Placeholder in the settings sheet's column filter."
+      ),
+      i18nRow(
+        "mobileSelectAllColumns",
+        "Select all",
+        "Button in a settings sheet section that checks every column in it."
+      ),
+      i18nRow(
+        "mobileNoColumnsMatch",
+        "No columns match",
+        "Shown when a settings sheet filter excludes every column."
+      ),
+      stringI18nRow(
+        "mobileExpandRow",
+        "Show details",
+        "Accessible label and title for a list row's expand chevron."
+      ),
+      stringI18nRow(
+        "mobileCollapseRow",
+        "Hide details",
+        "Same control once the row's field panel is open."
       ),
       i18nRow(
         "mobileShowMore",
