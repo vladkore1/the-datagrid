@@ -1215,13 +1215,15 @@ export function MobileGridList({
                   {listDetailCells.map((cell) => (
                     <span
                       key={cell.id}
-                      className="inline-flex min-w-0 items-center gap-1"
+                      className="flex min-w-0 items-center gap-1"
                     >
                       <span className="shrink-0 opacity-70">
                         {cellLabel(cell)}
                       </span>
+                      {/* Wrapping rather than clipping: a field can hold a
+                          button or a row of icons, and neither ellipses. */}
                       <span
-                        className="tdg-mobile-cell min-w-0 truncate text-foreground/80"
+                        className="tdg-mobile-cell min-w-0 break-words text-foreground/80"
                         data-slot="mobile-cell"
                         data-cell-role="detail"
                       >
