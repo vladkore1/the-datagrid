@@ -2664,7 +2664,7 @@
   row-gap: var(--tdg-mobile-summary-gap-y, 0.125rem);
   grid-template-columns: repeat(
     auto-fill,
-    minmax(var(--tdg-mobile-summary-column, 6rem), 1fr)
+    minmax(var(--tdg-mobile-summary-column, 9.5rem), 1fr)
   );
 }
 
