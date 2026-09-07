@@ -702,7 +702,8 @@ const mobileTransformPropsDefinition = `type TypeMobileTransformProps = {
 
   // Where a card field puts its label. "inline" moves the value to the
   // right of the label and gives every label one shared width, so the
-  // values line up on a single axis down the card. Default "stacked".
+  // values line up on a single axis down the card. Defaults to
+  // "inline" when this object is passed, "stacked" without it.
   cardFields?: "stacked" | "inline";
 
   // Field pairs a card lays out per row. "auto" is one below 540px and

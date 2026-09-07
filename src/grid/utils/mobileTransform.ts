@@ -151,7 +151,8 @@ export function resolveMobileTransform(params: {
     listExpand:
       config.listExpand ?? (hasMobileTransformConfig ? "click" : "none"),
     showRowExpandToggle: config.showRowExpandToggle ?? true,
-    cardFields: config.cardFields ?? "stacked",
+    cardFields:
+      config.cardFields ?? (hasMobileTransformConfig ? "inline" : "stacked"),
     cardColumns: config.cardColumns ?? "auto",
     cardLabelWidth: toCssLength(config.cardLabelWidth),
     cardFieldLimit: toFieldLimit(

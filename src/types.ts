@@ -1698,10 +1698,13 @@ export type TypeMobileTransformProps = {
   showRowExpandToggle?: boolean;
 
   /**
-   * Where a card field puts its label. `"stacked"` (default) sits it above the
-   * value; `"inline"` puts the value to the right of the label and gives every
-   * label the same width, so the values line up on one axis down the card
-   * instead of starting wherever the label above them ended.
+   * Where a card field puts its label. `"inline"` puts the value to the right
+   * of the label and gives every label the same width, so the values line up
+   * on one axis down the card instead of starting wherever the label above
+   * them ended; `"stacked"` sits the label above the value.
+   *
+   * Defaults to `"inline"` for a grid that passes this configuration object,
+   * and to `"stacked"` for one that only sets `allowMobileTransform`.
    */
   cardFields?: TypeMobileCardFields;
 
