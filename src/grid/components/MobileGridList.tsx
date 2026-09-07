@@ -1208,10 +1208,7 @@ export function MobileGridList({
                 </div>
               ) : null}
               {listDetailCells.length ? (
-                /* Columns of one width rather than a flowing line: with fields
-                   of differing lengths, one row would fit them all and the next
-                   would wrap, leaving nothing lined up down the list. */
-                <div className="tdg-mobile-row-summary grid min-w-0 text-xs text-muted-foreground">
+                <div className="tdg-mobile-row-summary flex min-w-0 flex-wrap items-center text-xs text-muted-foreground">
                   {listDetailCells.map((cell) => (
                     <span
                       key={cell.id}

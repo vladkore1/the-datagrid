@@ -2658,14 +2658,16 @@
   gap: var(--tdg-mobile-row-gap, 0.75rem);
 }
 
+/*
+ * Fields sized to their own content, wrapping as whole fields. Columns of one
+ * width were tried and dropped: they line up down the list, but they stretch
+ * the fields apart on a wide row and force a break inside a value on a narrow
+ * one, and neither is worth the alignment.
+ */
 .tdg-root .tdg-mobile-row-summary {
   margin-top: var(--tdg-mobile-summary-margin-top, 0.125rem);
   column-gap: var(--tdg-mobile-summary-gap-x, 0.75rem);
   row-gap: var(--tdg-mobile-summary-gap-y, 0.125rem);
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(var(--tdg-mobile-summary-column, 9.5rem), 1fr)
-  );
 }
 
 .tdg-root .tdg-mobile-row-field {

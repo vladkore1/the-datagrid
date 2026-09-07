@@ -3601,10 +3601,8 @@ type TypeSize = { width: number; height: number };`}
           through <code>listExpand</code> carries <code>data-expanded</code> and
           takes its background from <code>--tdg-mobile-row-expanded-bg</code>,
           which defaults to half of the muted token. The fields under a row's
-          label sit in columns of one width so they line up down the list, and{" "}
-          <code>--tdg-mobile-summary-column</code> sets that width, 9.5rem by
-          default, which is wide enough for a label beside a short value so
-          neither has to break.
+          label sit next to each other and wrap as whole fields, so a value is
+          never broken or trimmed.
         </p>
         <p>
           The layout's spacing is tokenised so an application can retune it
