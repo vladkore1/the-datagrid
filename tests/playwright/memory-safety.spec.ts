@@ -167,13 +167,26 @@ async function readLifecycleAudit(page: Page): Promise<LifecycleSnapshot> {
   });
 }
 
+/*
+ * `@tanstack/react-virtual` 3.13.14 notifies synchronously when a list's count
+ * changes, and a component that reads `getTotalSize()` while rendering is by
+ * definition mid-render when that lands, so React declines the flush and says
+ * so. The dropped flush is picked up by the next render, the notice is absent
+ * from a production React build, and no call of ours can reach the library's
+ * `flushSync`. Drop this once the dependency stops flushing.
+ */
+const TANSTACK_VIRTUAL_FLUSH_NOTICE =
+  "flushSync was called from inside a lifecycle method";
+
 function monitorBrowserHealth(page: Page) {
   const errors: string[] = [];
   let crashed = false;
 
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    if (message.type() !== "error") return;
+    if (message.text().includes(TANSTACK_VIRTUAL_FLUSH_NOTICE)) return;
+    errors.push(message.text());
   });
   page.on("crash", () => {
     crashed = true;
@@ -546,6 +559,9 @@ test.describe("browser memory safety", () => {
   test("keeps responsive virtualization and menu observers bounded", async ({
     page,
   }) => {
+    // Eight rounds of drawer, search and breakpoint churn run to 25s of the
+    // default 30s budget, so the default makes a green run a coin toss.
+    test.setTimeout(90_000);
     await installLifecycleAudit(page);
     const assertHealthy = monitorBrowserHealth(page);
     await page.setViewportSize({ width: 390, height: 844 });
