@@ -1241,16 +1241,18 @@ export function MobileGridList({
         ? `calc(${openIndentParts.join(" + ")} + var(--tdg-mobile-row-gap, 0.75rem))`
         : undefined;
 
-      const listRowHandlers =
-        expandable && listExpand === "click" && !rowIsDisabled
-          ? {
-              ...rowHandlers,
-              onClick: (event: React.MouseEvent) => {
-                if (!isOperableTarget(event.target)) toggleFields();
-                rowHandlers.onClick?.(event);
-              },
-            }
-          : rowHandlers;
+      // Named so the stylesheet can offer the row a cursor of its own: nothing
+      // else in the markup says this row is a target.
+      const opensOnTap = expandable && listExpand === "click" && !rowIsDisabled;
+      const listRowHandlers = opensOnTap
+        ? {
+            ...rowHandlers,
+            onClick: (event: React.MouseEvent) => {
+              if (!isOperableTarget(event.target)) toggleFields();
+              rowHandlers.onClick?.(event);
+            },
+          }
+        : rowHandlers;
       const listHierarchyControls = (
         <>
           {tree.renderToggle(row.original, rowIndex, MOBILE_TREE_TOGGLE)}
@@ -1286,6 +1288,7 @@ export function MobileGridList({
             stateClassName
           )}
           {...rowAttributes}
+          data-tappable={opensOnTap ? "true" : undefined}
           style={
             treeDepth == null
               ? undefined

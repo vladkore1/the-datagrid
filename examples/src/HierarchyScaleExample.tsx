@@ -110,6 +110,12 @@ function buildOrgs(bigBranchSize: number) {
   return { rows, roots: nest(rows) };
 }
 
+/*
+ * The page mounts the whole tree, so the default is the smallest of these: at
+ * 2,000 the grid took 3.0s to appear against 0.7s for the other examples, which
+ * under a parallel test run was enough to exhaust a 30s wait. The larger sizes
+ * stay a click away for measuring scale by hand.
+ */
 const BRANCH_SIZES = [500, 2000, 5000] as const;
 
 /*
@@ -168,7 +174,7 @@ export default function HierarchyScaleExample() {
   const { gridTheme, i18n } = useExamplesUi();
   const gridThemeBase = resolveThemeBase(gridTheme);
   const [branchSize, setBranchSize] =
-    React.useState<(typeof BRANCH_SIZES)[number]>(2000);
+    React.useState<(typeof BRANCH_SIZES)[number]>(500);
   const [pageSize, setPageSize] = React.useState(25);
   const [scroll, setScroll] = React.useState<"container" | "page">("page");
   const [insetBackground, setInsetBackground] = React.useState(true);
@@ -206,6 +212,10 @@ export default function HierarchyScaleExample() {
       style={
         {
           "--tdg-mobile-tree-indent": `${indent}px`,
+          // A row here opens on tap, so it says so under the pointer, on the
+          // mobile list and on the table alike.
+          "--tdg-mobile-row-tap-cursor": "pointer",
+          "--tdg-row-cursor": "pointer",
           ...(insetBackground
             ? {}
             : { "--tdg-mobile-row-indent-inset": "0px" }),

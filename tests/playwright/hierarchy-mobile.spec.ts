@@ -11,11 +11,13 @@ const SCALE_PAGE = "/examples/hierarchy-scale";
 async function openScalePage(page: Page, width: number, height = 950) {
   await page.setViewportSize({ width, height });
   await page.goto(SCALE_PAGE);
+  // The fixture builds its whole tree on mount, so it is slower to appear than
+  // the other examples and needs more than the default wait under load.
   await page
     .getByTestId("hierarchy-scale-grid")
     .locator(".tdg-root")
     .first()
-    .waitFor();
+    .waitFor({ timeout: 30000 });
 }
 
 const treeGrid = (page: Page) => page.getByTestId("hierarchy-scale-grid");
@@ -205,9 +207,66 @@ test("caps a branch on the table too, once the prop asks for it", async ({
   // The count is what is left in the branch, not what one press reveals.
   expect(label).toMatch(/Show more \(\d{3,}\)/);
 
+  // The control belongs to the run of rows, so it carries their cursor rather
+  // than the arrow a browser gives a button.
+  expect(await control.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer"
+  );
+
   const rowsBefore = await grid.locator('[data-slot="grid-row"]').count();
   await control.click();
   await expect
     .poll(async () => await grid.locator('[data-slot="grid-row"]').count())
     .toBeGreaterThan(rowsBefore);
+});
+
+test("marks a row that opens on tap and lets a token give it a pointer", async ({
+  page,
+}) => {
+  await openScalePage(page, 390);
+
+  const row = treeGrid(page).locator(".tdg-mobile-row").first();
+  await expect(row).toHaveAttribute("data-tappable", "true");
+  // The fixture opts in; the default is the browser's own `auto`.
+  expect(await row.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer"
+  );
+
+  // The chevron follows the row: a browser's button style would otherwise
+  // leave it on the default arrow while the row around it offered a pointer.
+  const chevron = treeGrid(page).locator('[data-slot="tree-toggle"]').first();
+  expect(await chevron.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer"
+  );
+
+  // The panel an open row reveals swallows its own clicks, so it is not a
+  // target and does not borrow the pointer.
+  await row.locator('[data-cell-role="primary"]').click();
+  const panel = row.locator('[data-slot="mobile-row-fields"]');
+  await expect(panel).toHaveCount(1);
+  expect(await panel.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "auto"
+  );
+
+  const untouched = await row.evaluate((node) => {
+    const root = node.closest<HTMLElement>(".tdg-root");
+    root?.style.setProperty("--tdg-mobile-row-tap-cursor", "auto");
+    return getComputedStyle(node).cursor;
+  });
+  expect(untouched).toBe("auto");
+});
+
+test("lets a token give a table row and its chevron a pointer too", async ({
+  page,
+}) => {
+  await openScalePage(page, 1440, 900);
+
+  const row = treeGrid(page).locator('[data-slot="grid-row"]').first();
+  expect(await row.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer"
+  );
+  const chevron = treeGrid(page).locator('[data-slot="tree-toggle"]').first();
+  expect(await chevron.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer"
+  );
 });

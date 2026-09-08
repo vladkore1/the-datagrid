@@ -2774,6 +2774,51 @@
  * this can go and still be seen; a fifth of it was invisible.
  */
 /*
+ * The pointer over a row that opens on tap, and over a table row, left as the
+ * browser's own `auto` so nothing changes for a grid that sets neither. A
+ * consumer who wants these to read as clickable sets `pointer`; the mobile one
+ * only lands on rows that actually are targets, which `data-tappable` marks.
+ */
+.tdg-root .tdg-mobile-row[data-tappable="true"] {
+  cursor: var(--tdg-mobile-row-tap-cursor, auto);
+}
+
+.tdg-root .tdg-row {
+  cursor: var(--tdg-row-cursor, auto);
+}
+
+/*
+ * `cursor` inherits, but a browser's own button style breaks the chain, so an
+ * expand chevron kept the default arrow while the row around it offered a
+ * pointer. Inheriting puts them back in step whichever cursor the row carries.
+ */
+.tdg-root [data-slot="tree-toggle"],
+.tdg-root [data-slot="row-detail-toggle"] {
+  cursor: inherit;
+}
+
+/*
+ * The control that reveals the rest of a branch belongs to the run of rows it
+ * sits in, so it takes that surface's cursor rather than the arrow a browser
+ * gives a button. Its own row is not a `.tdg-row`, so it reads the token.
+ */
+.tdg-root [data-slot="tree-branch-more-button"] {
+  cursor: var(--tdg-row-cursor, auto);
+}
+
+.tdg-root .tdg-mobile-branch-more button {
+  cursor: var(--tdg-mobile-row-tap-cursor, auto);
+}
+
+/*
+ * The panel an open row reveals swallows its own clicks, so it is not a target
+ * and must not borrow the row's pointer. Everything inside it follows.
+ */
+.tdg-root .tdg-mobile-row-fields {
+  cursor: auto;
+}
+
+/*
  * A tree row's indent, paintable whether or not the row is open, so a consumer
  * can make depth legible without leaning on the small horizontal steps alone.
  * `--tdg-mobile-row-indent-bg` defaults to `transparent`, which leaves the row

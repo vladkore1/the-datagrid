@@ -3625,6 +3625,14 @@ type TypeSize = { width: number; height: number };`}
           <code>--tdg-mobile-row-expanded-bg</code> gives one flat band again. A
           row's tap opens its fields and the chevron alone works the branch, so{" "}
           <code>showRowExpandToggle</code> defaults to <code>false</code> there.
+          A row that opens on tap carries <code>data-tappable</code>, and{" "}
+          <code>--tdg-mobile-row-tap-cursor</code> is the pointer it shows;{" "}
+          <code>--tdg-row-cursor</code> does the same for a table row. Both
+          default to <code>auto</code>, so a grid that sets neither is
+          unchanged, and the mobile one only reaches rows that really are
+          targets. An expand chevron inherits whichever cursor its row carries,
+          so the two never disagree, while the panel an open row reveals keeps
+          the plain cursor: it swallows its own clicks, so it is not one.
         </p>
         <p>
           <strong>Each set of siblings is budgeted separately</strong> on a
