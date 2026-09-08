@@ -597,6 +597,14 @@ function TokenDetails(props: {
           </React.Fragment>
         ))}
       </dl>
+      <p className="mt-3 text-sm text-muted-foreground">
+        These cover colour and spacing. For layout, and for which class names
+        and <code>data-slot</code> values are safe to target, see{" "}
+        <DocsRouteLink group="getting-started" slug="styling">
+          When a token is not enough
+        </DocsRouteLink>
+        .
+      </p>
     </details>
   );
 }
