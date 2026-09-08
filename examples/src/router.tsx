@@ -277,6 +277,12 @@ const exampleEditingRoute = createRoute({
   component: EditingExamplePage,
 });
 
+const exampleHierarchyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "examples/hierarchy",
+  component: HierarchyExamplePage,
+});
+
 const exampleInovuaParityRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "examples/inovua-parity",
@@ -335,6 +341,12 @@ const legacyEditingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "editing",
   component: EditingExamplePage,
+});
+
+const legacyHierarchyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "hierarchy",
+  component: HierarchyExamplePage,
 });
 
 const legacyInovuaParityRoute = createRoute({
@@ -515,11 +527,6 @@ const compatTallHeaderRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: "examples/hierarchy",
-    component: HierarchyExamplePage,
-  }),
   homeRoute,
   docsRoute.addChildren([docsIndexRoute, docsPageRoute]),
   compatToolbarRoute,
@@ -548,6 +555,7 @@ const routeTree = rootRoute.addChildren([
   exampleBasicRoute,
   exampleColumnsRoute,
   exampleEditingRoute,
+  exampleHierarchyRoute,
   exampleInovuaParityRoute,
   exampleSelectionRoute,
   exampleToolbarRoute,
@@ -558,6 +566,7 @@ const routeTree = rootRoute.addChildren([
   legacyBasicRoute,
   legacyColumnsRoute,
   legacyEditingRoute,
+  legacyHierarchyRoute,
   legacyInovuaParityRoute,
   legacySelectionRoute,
   legacyStackedColumnsRoute,
