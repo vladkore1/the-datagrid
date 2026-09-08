@@ -762,7 +762,11 @@ export default function MobileTransformExample() {
           a flex parent with a definite height. */}
       {hostHeader ? (
         <div
-          className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          /* `bg-primary` resolved to nothing here, leaving the bar
+             transparent over the rows: the section only carries the grid's own
+             tokens, so it takes its colours from those. z-40 keeps it under the
+             settings drawer at 50. */
+          className="tdg-tokens sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--tdg-color-border)] bg-[var(--tdg-color-card)] px-4 text-sm font-semibold text-[var(--tdg-color-card-foreground)]"
           data-testid="mobile-host-header"
         >
           <span>Mock host header</span>
