@@ -3606,6 +3606,52 @@ type TypeSize = { width: number; height: number };`}
           never broken or trimmed.
         </p>
         <p>
+          <strong>A tree grid stays on the list variant</strong> and hides the
+          variant toggle, because a card draws its own box and a box cannot
+          carry indentation. A node indents by{" "}
+          <code>--tdg-mobile-tree-indent</code> a level, which defaults to{" "}
+          <code>1rem</code> rather than the desktop <code>treeNestingSize</code>
+          , since a phone cannot spend 22px a level and still leave a label
+          room. An open node paints from its own indent rightward, so the space
+          ahead of the chevron stays clear and the depth stays readable; set{" "}
+          <code>--tdg-mobile-row-indent-inset</code> to <code>0px</code> to fill
+          the row edge to edge instead. The space it leaves clear is its own
+          colour rather than a hole:{" "}
+          <code>--tdg-mobile-row-expanded-gutter-bg</code> on the open row and{" "}
+          <code>--tdg-mobile-row-indent-bg</code> on every row, which turns the
+          indent into a depth guide and can carry less weight than the open one.
+          Both default to <code>transparent</code> so the row's usual background
+          shows through, and setting it to the same value as{" "}
+          <code>--tdg-mobile-row-expanded-bg</code> gives one flat band again. A
+          row's tap opens its fields and the chevron alone works the branch, so{" "}
+          <code>showRowExpandToggle</code> defaults to <code>false</code> there.
+        </p>
+        <p>
+          <strong>Each set of siblings is budgeted separately</strong> on a
+          tree, at <code>pageSize</code> a branch, with its own Show more at
+          that branch's indent. A flat budget spends itself on whatever was
+          expanded first, which lets one node with thousands of children push
+          every later root off the screen. For the same reason{" "}
+          <code>overflow: "pagination"</code> and <code>"both"</code> resolve to{" "}
+          <code>"show-more"</code>: a numbered page over a tree cuts mid-branch,
+          and the boundary moves as the viewer expands.
+        </p>
+        <p>
+          <strong>
+            A row detail panel is one region with the row's fields
+          </strong>{" "}
+          in the list variant, so the chevron and a tap on the row do the same
+          thing and the brief sits at the bottom of what opens. It is sized by
+          its content there rather than by <code>rowExpandHeight</code>, which
+          would put a scroll region inside the page's own scroll, and it lines
+          up with the row's title. Set{" "}
+          <code>--tdg-mobile-row-details-inset</code> to widen it, and{" "}
+          <code>--tdg-mobile-row-padding-x</code> to <code>0</code> as well to
+          reach the row's edge. On desktop the panel stays full-bleed as it
+          shipped, with its own component owning any padding;{" "}
+          <code>--tdg-master-detail-padding</code> insets it instead.
+        </p>
+        <p>
           The layout's spacing is tokenised so an application can retune it
           without forking a component. A list row reads{" "}
           <code>--tdg-mobile-row-padding-x</code> /{" "}
