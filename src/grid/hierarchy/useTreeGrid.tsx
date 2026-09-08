@@ -9,7 +9,7 @@ import type {
 import { indexTree, type TreeEntry, type TreeRecord } from "./treeData";
 import { cn } from "../../lib/utils";
 
-/** Lets the mobile layout size the toggle for a phone without forking it. */
+/** Lets the mobile layout size the toggle without forking it. */
 export type TreeToggleOptions = {
   nestingSize?: number | string;
   buttonClassName?: string;
@@ -137,11 +137,7 @@ export function useTreeGrid({
   };
   const visibleEntries: TreeEntry[] = [];
   const branchTruncations: TreeBranchTruncation[] = [];
-  /*
-   * The cap is counted per sibling group rather than over the flat run, so a
-   * branch's length is its own business and revealing more of one never
-   * displaces the branches after it.
-   */
+  // Per sibling group, so revealing more of one never displaces the others.
   const visit = (entries: TreeEntry[], branchKey: string) => {
     const limit = Math.max(
       1,

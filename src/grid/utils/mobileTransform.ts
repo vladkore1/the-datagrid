@@ -129,12 +129,8 @@ export function resolveMobileTransform(params: {
     ? "none"
     : (config.overflow ?? (scroll === "page" ? "show-more" : "none"));
 
-  /*
-   * A numbered page over a tree cuts mid-branch, and the boundary moves as the
-   * viewer expands. Revealing more instead keeps a branch whole, and the tree
-   * budget caps each set of siblings so one node with thousands of children
-   * cannot flood the layout.
-   */
+  // A numbered page over a tree cuts mid-branch, and the boundary moves as the
+  // viewer expands.
   const overflow: TypeMobileTransformOverflow =
     treeEnabled &&
     (requestedOverflow === "pagination" || requestedOverflow === "both")
@@ -145,12 +141,7 @@ export function resolveMobileTransform(params: {
     enabled: config.enabled ?? allowMobileTransform,
     mediaQuery: toMobileTransformMediaQuery(config.breakpoint),
     scroll,
-    /*
-     * A card draws its own box, and a box cannot carry indentation: the border
-     * reads as the unit, so a nested node looks like a misaligned card rather
-     * than a child. The list is the only variant that can express a tree, so a
-     * tree grid stays on it.
-     */
+    // A card's border reads as the unit, so it cannot carry indentation.
     variant: treeEnabled ? "list" : config.variant,
     // `allowMobileTransform` shipped as a cards-only layout. Preserve that
     // behavior until the new configuration object explicitly opts into the
@@ -172,8 +163,7 @@ export function resolveMobileTransform(params: {
     listExpand:
       config.listExpand ??
       (treeEnabled || hasMobileTransformConfig ? "click" : "none"),
-    // One chevron per row, and on a tree it belongs to the branch. The row's
-    // own tap is what reaches the fields.
+    // On a tree the one chevron belongs to the branch; a tap reaches the fields.
     showRowExpandToggle:
       config.showRowExpandToggle ?? (treeEnabled ? false : true),
     cardFields:

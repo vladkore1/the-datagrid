@@ -197,26 +197,18 @@ const ID_COLUMN = /(^|[-_\s])(id|uuid|key|code|number|no)($|[-_\s])/i;
  * band and spans the full width, or items scroll through the gap above and
  * beside it.
  */
-/*
- * A phone cannot spend the desktop's 22px a level and still leave a label room.
- * The toggle stays square as it is on desktop and a size up from it, which
- * takes a tap without the bulk of a full 44px control.
- */
+/* Smaller steps than the desktop's 22px a level, or a label has no room. */
 const MOBILE_TREE_TOGGLE_SIZE = "2.25rem";
 const MOBILE_TREE_TOGGLE = {
   nestingSize: "var(--tdg-mobile-tree-indent, 1rem)",
   buttonClassName: "size-9",
 } as const;
 
-/**
- * Where a node's own content starts, so an opened panel lines up with its
- * title: the indent, the toggle, and the gap the row puts after it.
- */
+/** Where a node's title starts: indent, toggle, and the row's gap after it. */
 function mobileTreeContentOffset(depth: number) {
   return `calc(var(--tdg-mobile-tree-indent, 1rem) * ${depth} + ${MOBILE_TREE_TOGGLE_SIZE} + var(--tdg-mobile-row-gap, 0.75rem))`;
 }
 
-/** The indent alone, which is the part of an open row left unpainted. */
 function mobileTreeIndentOffset(depth: number) {
   return `calc(var(--tdg-mobile-tree-indent, 1rem) * ${depth})`;
 }
@@ -584,21 +576,13 @@ export function MobileGridList({
     setRevealed(initialReveal);
   }, [deferredQuery, initialReveal, safePageIndex, sortInfo]);
 
-  /*
-   * A tree is budgeted per branch upstream, roots included, so slicing the flat
-   * run here as well would cut a branch's own control off the end of the list
-   * and leave no way to reveal the rest.
-   */
+  // Slicing a tree here too would cut a branch's own reveal control off the end.
   const visibleRows = React.useMemo(
     () =>
       showMoreEnabled && !tree.enabled ? pageRows.slice(0, revealed) : pageRows,
     [pageRows, revealed, showMoreEnabled, tree.enabled]
   );
-  /*
-   * A tree budgets each branch upstream, roots included, and offers every cut
-   * branch its own control, so the single control under the list would be a
-   * second way to do the same thing.
-   */
+  // A tree offers every cut branch its own control, this one included.
   const canShowMore =
     showMoreEnabled && !tree.enabled && revealed < pageRows.length;
   const branchTruncationByRowId = React.useMemo(() => {
@@ -608,8 +592,7 @@ export function MobileGridList({
     return byRow;
   }, [tree.branchTruncations]);
   const pagerPageIndex = gridPaging ? gridPaging.pageIndex : safePageIndex;
-  // Read through a ref because the controller rebuilds it on every render, and
-  // a node's depth only moves when the rows themselves do.
+  // Through a ref: the controller rebuilds it every render.
   const getTreeMetadataRef = React.useRef(tree.getMetadata);
   getTreeMetadataRef.current = tree.getMetadata;
 
@@ -1150,12 +1133,8 @@ export function MobileGridList({
     const treeDepth = tree.enabled
       ? (getTreeMetadataRef.current(row.original as TreeRecord)?.depth ?? 0)
       : undefined;
-    /*
-     * A card puts its leading controls in the header and everything else under
-     * it, so the body has to clear the same controls by hand or it hangs to
-     * their left. The toggle a card shows is its only way into the brief, so it
-     * is not subject to `showRowExpandToggle`.
-     */
+    // A card's body sits outside its header, so it clears the header's controls
+    // by hand. The card's toggle is its only way in, so it always shows.
     const cardIndentParts: string[] = [];
     if (treeDepth != null) {
       cardIndentParts.push(
@@ -1201,20 +1180,13 @@ export function MobileGridList({
     ) : null;
 
     if (activeVariant === "list") {
-      /*
-       * A brief and the row's own fields are one open region here, not two.
-       * Master-detail owns the open state whenever it applies, so a consumer's
-       * `expandedRows` and its callbacks stay authoritative, and the row needs
-       * only one control: the chevron does what tapping the row does.
-       */
+      // One open region, not two. Master-detail owns the state where it applies,
+      // so a consumer's `expandedRows` and callbacks stay authoritative.
       const briefActive =
         masterDetail.enabled &&
         masterDetail.isExpandable(row.original, rowIndex);
-      /*
-       * On a tree this control is the only way into a node's details, since the
-       * chevron beside it belongs to the branch, so it ignores
-       * `showRowExpandToggle`. A flat grid can hide it and open the row by tap.
-       */
+      // On a tree the chevron beside it owns the branch, so this is the only way
+      // into the details and cannot be hidden.
       const briefToggleShown =
         briefActive && (tree.enabled || showRowExpandToggle);
       const expandable =
@@ -1227,8 +1199,7 @@ export function MobileGridList({
         ? () => masterDetail.toggle(row.original, rowIndex)
         : () => toggleExpandedRow(row.id);
 
-      // Clears whatever leading controls the row shows, so the open region
-      // lines up with the title rather than the row's edge.
+      // Clears the row's leading controls so the panel lines up with the title.
       const openIndentParts: string[] = [];
       if (treeDepth != null) {
         openIndentParts.push(
@@ -1241,8 +1212,6 @@ export function MobileGridList({
         ? `calc(${openIndentParts.join(" + ")} + var(--tdg-mobile-row-gap, 0.75rem))`
         : undefined;
 
-      // Named so the stylesheet can offer the row a cursor of its own: nothing
-      // else in the markup says this row is a target.
       const opensOnTap = expandable && listExpand === "click" && !rowIsDisabled;
       const listRowHandlers = opensOnTap
         ? {
@@ -1431,11 +1400,8 @@ export function MobileGridList({
                   data-row-id={row.id}
                   role="region"
                   aria-label={`Details for ${row.id}`}
-                  /* Sized by its content: `rowExpandHeight` would put a scroll
-                     region inside the page's own scroll on a phone. Lined up
-                     with the title by default; a consumer who wants the brief
-                     to run wider sets the inset, and reaches the row's own
-                     edge by taking `--tdg-mobile-row-padding-x` down too. */
+                  /* Content-sized: `rowExpandHeight` would nest a scroll
+                     region inside the page's own scroll. */
                   style={{
                     paddingInlineStart: `var(--tdg-mobile-row-details-inset, ${openRegionIndent ?? "0px"})`,
                   }}
@@ -1537,10 +1503,7 @@ export function MobileGridList({
   };
 
   // Rendered even when empty: it is the list landmark, and the page-scroll
-  /*
-   * Rides along inside the row it follows so the virtualizer keeps one item per
-   * row: a heterogeneous item list would put markers into every index it maps.
-   */
+  // Inside the row it follows, so the virtualizer keeps one item per row.
   const renderBranchMore = (index: number) => {
     const row = visibleRows[index];
     const truncation = row ? branchTruncationByRowId.get(row.id) : undefined;
@@ -1548,11 +1511,9 @@ export function MobileGridList({
     return (
       <div
         className={cn(
-          // Padded so the control's hover fill stops short of the rules above
-          // and below it rather than meeting them.
+          // Padded so the hover fill stops short of the rules above and below.
           "tdg-mobile-branch-more flex w-full py-1.5",
-          // Boxed rows enclose the run in one border, so the control has to be
-          // a member of that group rather than a loose block splitting it.
+          // Boxed rows are one bordered group, so this joins it.
           boxedListRows &&
             cn(
               "border-x border-b bg-[var(--tdg-mobile-list-bg,var(--tdg-grid-bg))]",
@@ -1619,8 +1580,7 @@ export function MobileGridList({
               boxedListEndGutters &&
                 virtualRow.index === visibleRows.length - 1 &&
                 "pb-3",
-              /* A card's run leaves 6px under the last one against 12px at its
-                 sides, which reads as the list having been cut off. */
+              // 6px under the last card against 12px at its sides reads as cut off.
               activeVariant === "cards" &&
                 !plainChrome &&
                 virtualRow.index === visibleRows.length - 1 &&
@@ -2086,11 +2046,8 @@ export function MobileGridList({
       {/* The shell centres itself with a translate as well as an offset: the
           offset is overruled in the stylesheet, the translate here. */}
       <DialogContent
-        /*
-         * Portalled out of the grid root on purpose: the root isolates its
-         * stacking layers, so a host header with a z-index of its own would
-         * paint over this sheet whatever z-index the sheet carried.
-         */
+        // Out of the grid root on purpose: it isolates its stacking layers, so
+        // host chrome would otherwise paint over the sheet at any z-index.
         container={typeof document === "undefined" ? undefined : document.body}
         className="tdg-mobile-settings-drawer translate-x-0 translate-y-0 gap-0"
         data-closing={drawerClosing ? "true" : undefined}

@@ -577,6 +577,359 @@ const dataSource = async (args: TypeDataSourceArgs) => {
 // Inside RDGSearchProvider, args.searchValue contains the committed query.
 // Remote pagination resets to skip: 0 before a new query is requested.`;
 
+/** Tokens for one part of the grid, folded away until someone wants them. */
+function TokenDetails(props: {
+  label: string;
+  tokens: { name: string; description: string }[];
+}) {
+  return (
+    <details className="rounded-2xl border px-4 py-3">
+      <summary className="cursor-pointer text-sm font-medium text-foreground">
+        {props.label}
+      </summary>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,20rem)_1fr]">
+        {props.tokens.map((token) => (
+          <React.Fragment key={token.name}>
+            <dt className="font-mono text-xs text-foreground">{token.name}</dt>
+            <dd className="text-sm text-muted-foreground">
+              {token.description}
+            </dd>
+          </React.Fragment>
+        ))}
+      </dl>
+    </details>
+  );
+}
+
+const treeTokens = [
+  {
+    name: "--tdg-mobile-tree-indent",
+    description: "Indent per level on the mobile list. 1rem.",
+  },
+  {
+    name: "--tdg-mobile-row-indent-inset",
+    description: "Where a node's indent ends. Set per row by the layout.",
+  },
+  {
+    name: "--tdg-mobile-row-indent-bg",
+    description:
+      "Colours the indent on every row, as a depth guide. transparent.",
+  },
+  {
+    name: "--tdg-mobile-row-expanded-gutter-bg",
+    description: "Colours the indent on an open row. transparent.",
+  },
+  {
+    name: "--tdg-mobile-row-expanded-bg",
+    description: "Fill on an open row, right of the indent.",
+  },
+  { name: "--tdg-row-cursor", description: "Pointer over a table row. auto." },
+  {
+    name: "--tdg-mobile-row-tap-cursor",
+    description: "Pointer over a mobile row that opens on tap. auto.",
+  },
+];
+
+const rowDetailTokens = [
+  {
+    name: "--tdg-master-detail-padding",
+    description: "Inset of the panel on the table. 0.75rem 1rem.",
+  },
+  {
+    name: "--tdg-mobile-row-details-inset",
+    description: "Where the panel starts on mobile. Aligned with the title.",
+  },
+];
+
+const mobileRowTokens = [
+  {
+    name: "--tdg-mobile-row-padding-x",
+    description: "Row padding, sides. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-row-padding-y",
+    description: "Row padding, top and bottom. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-row-gap",
+    description: "Gap between a row's parts. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-summary-gap-x",
+    description: "Gap between the fields under a title. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-summary-gap-y",
+    description: "Gap between wrapped rows of fields. 0.125rem.",
+  },
+  {
+    name: "--tdg-mobile-summary-label-gap",
+    description: "Gap between a label and its value. 0.25rem.",
+  },
+  {
+    name: "--tdg-mobile-list-border-color",
+    description: "Rule between list rows.",
+  },
+  { name: "--tdg-mobile-list-bg", description: "Row background." },
+  {
+    name: "--tdg-mobile-list-radius",
+    description: "Corner radius of a boxed run. 0.5rem.",
+  },
+];
+
+const mobileCardTokens = [
+  { name: "--tdg-mobile-card-padding", description: "Card padding. 1rem." },
+  {
+    name: "--tdg-mobile-card-gap",
+    description: "Gap inside a card's header. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-card-field-gap-x",
+    description: "Gap between card fields. 1.25rem.",
+  },
+  {
+    name: "--tdg-mobile-card-field-gap-y",
+    description: "Gap between card field rows. 0.75rem.",
+  },
+  {
+    name: "--tdg-mobile-card-label-width",
+    description: "Fixed label column width, when set.",
+  },
+];
+
+const mobileChromeTokens = [
+  {
+    name: "--tdg-mobile-show-more-bg",
+    description: "Show more control background.",
+  },
+  {
+    name: "--tdg-mobile-show-more-color",
+    description: "Show more control text.",
+  },
+  {
+    name: "--tdg-mobile-show-more-border-color",
+    description: "Show more control border.",
+  },
+  {
+    name: "--tdg-mobile-show-more-radius",
+    description: "Show more control radius.",
+  },
+  { name: "--tdg-mobile-pagination-color", description: "Pager text." },
+  { name: "--tdg-mobile-pagination-padding", description: "Pager padding." },
+  {
+    name: "--tdg-mobile-pagination-button-bg",
+    description: "Pager button background.",
+  },
+  {
+    name: "--tdg-mobile-pagination-button-color",
+    description: "Pager button text.",
+  },
+];
+
+const mobileBasicSnippet = `<ReactDataGrid
+  idProperty="id"
+  columns={columns}
+  dataSource={accounts}
+  allowMobileTransform
+/>;`;
+
+const mobilePropRows: ReferenceRow[] = [
+  {
+    name: "allowMobileTransform",
+    type: "boolean",
+    defaultValue: "false",
+    description: "Swaps the table for a list on a narrow screen.",
+  },
+  {
+    name: "mobileTransform",
+    type: "TypeMobileTransformProps",
+    defaultValue: "undefined",
+    description:
+      "Configures the layout. Passing the object also opts into the newer defaults.",
+  },
+];
+
+const mobileTransformFieldRows: ReferenceRow[] = [
+  {
+    name: "breakpoint",
+    type: "number | string",
+    defaultValue: "1024",
+    description: "When the list takes over. A number is a max-width in pixels.",
+  },
+  {
+    name: "scroll",
+    type: "container | page",
+    defaultValue: "container",
+    description:
+      "Which element the rows scroll in. Page reads better on a phone, but the container must then be free to grow.",
+  },
+  {
+    name: "defaultVariant",
+    type: "list | cards",
+    defaultValue: "list with the object, cards without",
+    description: "Rows as lines or as cards. A tree is always a list.",
+  },
+  {
+    name: "listFieldLimit",
+    type: "number | all",
+    defaultValue: "3",
+    description: "Fields shown under a list row's title.",
+  },
+  {
+    name: "listExpand",
+    type: "none | click | chevron",
+    defaultValue: "click with the object",
+    description: "How a row opens its full set of fields.",
+  },
+  {
+    name: "overflow",
+    type: "none | show-more | pagination | both",
+    defaultValue: "show-more under page scroll",
+    description:
+      "How the list bounds its rows. A tree resolves pagination to show-more.",
+  },
+  {
+    name: "pageSize",
+    type: "number",
+    defaultValue: "25",
+    description: "Rows per batch, and the cap on a tree branch.",
+  },
+  {
+    name: "showSettings",
+    type: "boolean",
+    defaultValue: "true with the object",
+    description:
+      "Gathers sort, search scope and column controls behind one button.",
+  },
+  {
+    name: "stickyOffset",
+    type: "number | string",
+    defaultValue: "0",
+    description:
+      "Room the sticky toolbar leaves for whatever the page fixes above the grid.",
+  },
+];
+
+const hierarchyTreePropRows: ReferenceRow[] = [
+  {
+    name: "treeEnabled",
+    type: "boolean",
+    defaultValue: "false",
+    description: "Turns the tree on. Nothing else here applies without it.",
+  },
+  {
+    name: "nodesProperty",
+    type: "string",
+    defaultValue: '"nodes"',
+    description: "The field on a row that holds its children.",
+  },
+  {
+    name: "treeColumn",
+    type: "string",
+    defaultValue: "first column",
+    description: "Which column shows the chevron and the indent.",
+  },
+  {
+    name: "treeNestingSize",
+    type: "number",
+    defaultValue: "22",
+    description:
+      "Pixels of indent per level on the table. The mobile list uses --tdg-mobile-tree-indent instead.",
+  },
+  {
+    name: "defaultExpandedNodes",
+    type: "TypeExpandedNodes",
+    defaultValue: "{}",
+    description: "Which branches start open, by row id, when uncontrolled.",
+  },
+  {
+    name: "expandedNodes",
+    type: "TypeExpandedNodes",
+    defaultValue: "undefined",
+    description: "Holds expansion yourself. Pair with onExpandedNodesChange.",
+  },
+  {
+    name: "onExpandedNodesChange",
+    type: "(change) => void",
+    defaultValue: "undefined",
+    description: "Fires with the next expansion map and the node that moved.",
+  },
+  {
+    name: "treeBranchPageSize",
+    type: "number",
+    defaultValue: "undefined",
+    description:
+      "Children a branch shows at once, with a control for the rest. Counted per branch, so a wide one cannot bury the branches after it. Mobile falls back to mobileTransform.pageSize.",
+  },
+];
+
+const hierarchyDetailPropRows: ReferenceRow[] = [
+  {
+    name: "enableRowExpand",
+    type: "boolean",
+    defaultValue: "false",
+    description: "Turns row details on.",
+  },
+  {
+    name: "renderRowDetails",
+    type: "(info) => ReactNode",
+    defaultValue: "undefined",
+    description:
+      "Your panel. Handed the row's data, id, rowIndex and toggleRowExpand.",
+  },
+  {
+    name: "rowExpandHeight",
+    type: "number | (({ data }) => number)",
+    defaultValue: "80",
+    description:
+      "Height of the whole expanded row on the table; the panel scrolls the rest. The mobile list sizes it to its content.",
+  },
+  {
+    name: "multiRowExpand",
+    type: "boolean",
+    defaultValue: "false",
+    description: "Lets more than one panel stay open.",
+  },
+  {
+    name: "expandedRows",
+    type: "TypeExpandedRows",
+    defaultValue: "undefined",
+    description: "Holds which rows are open yourself.",
+  },
+  {
+    name: "onExpandedRowsChange",
+    type: "(info) => void",
+    defaultValue: "undefined",
+    description: "Fires with the next open/closed maps.",
+  },
+];
+
+const hierarchyTreeSnippet = `const teams = [
+  {
+    id: "eng",
+    name: "Engineering",
+    nodes: [{ id: "platform", name: "Platform" }],
+  },
+  { id: "ops", name: "Operations" },
+];
+
+<ReactDataGrid
+  idProperty="id"
+  columns={columns}
+  dataSource={teams}
+  treeEnabled
+  treeColumn="name"
+/>;`;
+
+const hierarchyDetailsSnippet = `<ReactDataGrid
+  idProperty="id"
+  columns={columns}
+  dataSource={projects}
+  enableRowExpand
+  rowExpandHeight={220}
+  renderRowDetails={({ data }) => <ProjectBrief project={data} />}
+/>;`;
+
 const selectionSnippet = `const [selectedRows, setSelectedRows] = useState<TypeRowSelection>({});
 
 <ReactDataGrid
@@ -998,7 +1351,7 @@ function TypeCell(props: { value: string }) {
           <button
             key={`${part}-${index}`}
             type="button"
-            className="underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+            className="cursor-pointer underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
             onClick={() => setOpenName(part)}
           >
             {part}
@@ -7226,6 +7579,264 @@ const columns: TypeColumns = [
             >
               Open the stacked columns example
             </Link>
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    group: "guides",
+    slug: "mobile",
+    title: "Guide: mobile",
+    summary:
+      "On a narrow screen the table becomes a list of rows you can read without scrolling sideways.",
+    description:
+      "One prop turns it on. The rest is about how much of a row to show, where it scrolls, and how many rows at a time.",
+    tags: ["Guide", "Mobile", "Responsive"],
+    sections: [
+      {
+        id: "mobile-turning-it-on",
+        title: "Turning it on",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              A table on a phone means scrolling sideways. With{" "}
+              <code>allowMobileTransform</code>, a narrow screen shows each row
+              as a block instead: a title, a few fields under it, and the row's
+              actions.
+            </p>
+            <CodeBlock code={mobileBasicSnippet} language="tsx" />
+            <p>
+              That is the whole minimum. Add <code>mobileTransform</code> when
+              you want to change what a row shows or where it scrolls.
+            </p>
+            <p className="font-medium text-foreground">
+              Props on <code>&lt;ReactDataGrid&gt;</code>
+            </p>
+            <ReferenceTable rows={mobilePropRows} sectionId="mobile-props" />
+            <TokenDetails label="Styling a list row" tokens={mobileRowTokens} />
+          </div>
+        ),
+      },
+      {
+        id: "mobile-rows",
+        title: "How much of a row to show",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              A <strong>list</strong> row is one line: a title with a few fields
+              beside it. A <strong>card</strong> gives each row its own box with
+              more room. Lists suit scanning, cards suit reading.
+            </p>
+            <p>
+              Tapping a row opens the rest of its fields, so the row itself can
+              stay short. <code>listFieldLimit</code> decides how many show
+              before that.
+            </p>
+            <TokenDetails label="Styling a card" tokens={mobileCardTokens} />
+          </div>
+        ),
+      },
+      {
+        id: "mobile-scrolling",
+        title: "Where it scrolls, and how much",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              By default the rows scroll inside the grid. Letting them scroll
+              with the document feels better on a phone, and the grid then needs
+              a container free to grow, and one that does not scroll itself.
+            </p>
+            <p>
+              Long lists reveal a batch at a time rather than all at once.{" "}
+              <code>pageSize</code> is the batch, and <code>overflow</code>{" "}
+              chooses between a Show more control, a pager, or neither.
+            </p>
+            <p className="font-medium text-foreground">
+              Fields inside the <code>mobileTransform</code> object
+            </p>
+            <ReferenceTable
+              rows={mobileTransformFieldRows}
+              sectionId="mobile-scrolling"
+            />
+            <TokenDetails
+              label="Styling the Show more control and the pager"
+              tokens={mobileChromeTokens}
+            />
+          </div>
+        ),
+      },
+      {
+        id: "mobile-controls",
+        title: "The controls above the rows",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              The layout puts a search box above the rows, and gathers sorting,
+              which columns to search and which to show behind one settings
+              button, so a narrow screen is not filled with chrome.
+            </p>
+            <p>
+              Every label is translatable through <code>i18n</code>, under keys
+              beginning <code>mobile</code>. If your page has a fixed header,
+              give <code>stickyOffset</code> its height so the sticky toolbar
+              comes to rest below it.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: "mobile-styling",
+        title: "Changing the look",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Spacing, borders and backgrounds come from CSS custom properties
+              rather than props, so they can be retuned without forking a
+              component. Every one of them is listed under{" "}
+              <DocsRouteLink group="reference" slug="types">
+                TypeMobileTransformProps
+              </DocsRouteLink>
+              .
+            </p>
+          </div>
+        ),
+      },
+    ],
+  },
+  {
+    group: "guides",
+    slug: "hierarchy",
+    title: "Guide: hierarchy",
+    summary:
+      "Rows that contain other rows, and rows that open to show more about themselves.",
+    description:
+      "Two separate features that often appear together: a tree of parents and children, and a panel of your own underneath a row.",
+    tags: ["Guide", "Hierarchy", "Tree", "Master detail"],
+    sections: [
+      {
+        id: "hierarchy-overview",
+        title: "Trees and row details",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              A <strong>tree</strong> puts rows inside rows: a team holds its
+              projects, and a chevron opens them. A <strong>row detail</strong>{" "}
+              puts a panel of your own under a single row, for anything a row
+              cannot say in its columns.
+            </p>
+            <p>You can use either on its own, or both on the same grid.</p>
+          </div>
+        ),
+      },
+      {
+        id: "hierarchy-tree",
+        title: "A tree",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Children live on the parent, under <code>nodes</code>. Turn the
+              tree on and say which column shows the chevron.
+            </p>
+            <CodeBlock code={hierarchyTreeSnippet} language="tsx" />
+            <p>
+              A row with no <code>nodes</code> is a leaf. Use{" "}
+              <code>nodesProperty</code> if your children live under a different
+              name, and <code>treeNestingSize</code> to change the indent.
+            </p>
+            <Callout title="Flat data with a parent id">
+              <p>
+                Nesting is what the grid reads. If your rows carry something
+                like <code>parent_id</code> instead, build the nested shape
+                first — the hierarchy example on the examples page does exactly
+                that in a few lines.
+              </p>
+            </Callout>
+            <p className="font-medium text-foreground">
+              Tree props, on <code>&lt;ReactDataGrid&gt;</code>
+            </p>
+            <ReferenceTable
+              rows={hierarchyTreePropRows}
+              sectionId="hierarchy-tree"
+            />
+            <TokenDetails label="Styling a tree row" tokens={treeTokens} />
+          </div>
+        ),
+      },
+      {
+        id: "hierarchy-expanding",
+        title: "Which branches are open",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              The grid remembers this for you. Pass{" "}
+              <code>defaultExpandedNodes</code> to choose what starts open, or
+              hold it yourself with <code>expandedNodes</code> and{" "}
+              <code>onExpandedNodesChange</code> if the state belongs to your
+              app.
+            </p>
+            <p>
+              Filtering and searching reach the whole tree, not just the rows on
+              screen: a match inside a closed branch opens its parents so you
+              can see it in place. Clearing the search puts the branches back.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: "hierarchy-row-details",
+        title: "A panel under a row",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Return whatever you like from <code>renderRowDetails</code>. It is
+              handed the row's <code>data</code>, its <code>id</code>, and a{" "}
+              <code>toggleRowExpand</code> in case the panel wants to close
+              itself.
+            </p>
+            <CodeBlock code={hierarchyDetailsSnippet} language="tsx" />
+            <p>
+              <code>rowExpandHeight</code> is the height of the whole expanded
+              row, and the panel scrolls whatever does not fit.{" "}
+              <code>multiRowExpand</code> lets several stay open at once.
+            </p>
+            <p className="font-medium text-foreground">
+              Row detail props, on <code>&lt;ReactDataGrid&gt;</code>
+            </p>
+            <ReferenceTable
+              rows={hierarchyDetailPropRows}
+              sectionId="hierarchy-row-details"
+            />
+            <TokenDetails
+              label="Styling a detail panel"
+              tokens={rowDetailTokens}
+            />
+          </div>
+        ),
+      },
+      {
+        id: "hierarchy-on-a-phone",
+        title: "On a phone",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              With <code>allowMobileTransform</code>, a narrow screen swaps the
+              table for a list. A tree always uses that list rather than cards,
+              because a card draws a box and a box cannot show that one row sits
+              inside another.
+            </p>
+            <p>
+              Rows keep their chevrons and indent by depth. Tapping a row opens
+              its fields; the chevron stays the way into the branch. The panel
+              from <code>renderRowDetails</code> appears inside the same opened
+              area rather than in a second one.
+            </p>
+            <p>
+              A branch shows a page of children at a time, with a control to
+              reveal more, so opening a parent with thousands of children cannot
+              bury everything after it. Set <code>treeBranchPageSize</code> to
+              use the same cap on the table.
+            </p>
           </div>
         ),
       },

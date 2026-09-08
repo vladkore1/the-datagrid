@@ -230,9 +230,8 @@ export function filterDataGridSearchIndex<Row>(
 }
 
 /**
- * The columns a mobile search actually looks at, in one place because both the
- * layout that renders the box and the grid that searches a tree behind it have
- * to agree on the answer.
+ * The columns a mobile search looks at. Shared, because the layout rendering
+ * the box and the grid searching behind it have to agree.
  */
 export function resolveSearchedColumns(
   searchColumns: readonly TypeColumn[],

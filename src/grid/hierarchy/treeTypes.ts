@@ -34,14 +34,10 @@ export type TypeTreeGridProps = {
   generateIdFromPath?: boolean;
   treeNestingSize?: number;
   /**
-   * Caps how many children a branch shows at once, with a control after the
-   * last of them that reveals the next batch. Left unset a branch shows every
-   * child it has, which is how the table has always behaved; the mobile layout
-   * falls back to `mobileTransform.pageSize` so a phone stays bounded.
-   *
-   * Each set of siblings is counted on its own rather than the flat run of
-   * rows, so opening one node with thousands of children cannot push the nodes
-   * after it off the screen.
+   * Children a branch shows at once, with a control after them for the rest.
+   * Unset shows every child; the mobile layout falls back to
+   * `mobileTransform.pageSize`. Counted per sibling group, so opening one wide
+   * branch cannot push the branches after it off the screen.
    */
   treeBranchPageSize?: number;
   expandedNodes?: TypeExpandedNodes;

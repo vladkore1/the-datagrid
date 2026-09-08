@@ -1626,11 +1626,8 @@ export type TypeMobileTransformProps = {
 
   /**
    * Controlled row presentation. Pair with `onVariantChange` to drive it.
-   *
-   * A tree grid (`treeEnabled`) is always `"list"` and ignores this. A card
-   * draws its own box, and a box cannot carry indentation: the border reads as
-   * the unit, so a nested node looks like a misaligned card rather than a
-   * child. The variant toggle is hidden there for the same reason.
+   * A tree grid is always `"list"` and ignores this, since a card's border
+   * reads as the unit and so cannot carry indentation.
    */
   variant?: TypeMobileTransformVariant;
 
@@ -1706,9 +1703,8 @@ export type TypeMobileTransformProps = {
    * still reports its state through `aria-expanded`, but only a pointer can
    * open it.
    *
-   * Defaults to `false` on a tree grid, where the row already carries a
-   * chevron for its branch and a second one beside it would be ambiguous. The
-   * row's own tap opens the fields there instead.
+   * Defaults to `false` on a tree grid, whose chevron belongs to the branch.
+   * The row's own tap opens the fields there.
    */
   showRowExpandToggle?: boolean;
 
@@ -1773,9 +1769,8 @@ export type TypeMobileTransformProps = {
    * grid whose search box is mounted outside it or which renders a tree.
    */
   /**
-   * On a tree grid the box searches the whole tree rather than the rows already
-   * on screen, and reveals the ancestors of a match the way the filter row
-   * does, so a record inside a collapsed branch is still found.
+   * On a tree grid the box searches the whole tree, not just the rows on
+   * screen, and reveals the ancestors of a match.
    */
   showSearch?: boolean;
 
@@ -1856,12 +1851,9 @@ export type TypeMobileTransformProps = {
    * pager, driven by the grid's `skip`/`limit` and its authoritative `count`,
    * and `pageSize`/`pageSizes` give way to the grid's `limit`/`pageSizes`.
    *
-   * On a tree grid `"pagination"` and `"both"` resolve to `"show-more"`: a
-   * numbered page over a tree cuts mid-branch, and the boundary moves as the
-   * viewer expands. A tree also caps each set of siblings at `pageSize`
-   * whatever this says, with its own control at that branch's indent, because
-   * a branch's length is chosen by the viewer rather than given by the data
-   * and nothing else bounds a node with thousands of children once it is open.
+   * On a tree grid `"pagination"` and `"both"` resolve to `"show-more"`, since
+   * a numbered page over a tree cuts mid-branch. A tree also caps each set of
+   * siblings at `pageSize` whatever this says.
    */
   overflow?: TypeMobileTransformOverflow;
 

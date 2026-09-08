@@ -2773,12 +2773,7 @@
  * winner to stylesheet order. Half of a near-white token is about as light as
  * this can go and still be seen; a fifth of it was invisible.
  */
-/*
- * The pointer over a row that opens on tap, and over a table row, left as the
- * browser's own `auto` so nothing changes for a grid that sets neither. A
- * consumer who wants these to read as clickable sets `pointer`; the mobile one
- * only lands on rows that actually are targets, which `data-tappable` marks.
- */
+/* `data-tappable` marks the rows that really are click targets. */
 .tdg-root .tdg-mobile-row[data-tappable="true"] {
   cursor: var(--tdg-mobile-row-tap-cursor, auto);
 }
@@ -2787,21 +2782,13 @@
   cursor: var(--tdg-row-cursor, auto);
 }
 
-/*
- * `cursor` inherits, but a browser's own button style breaks the chain, so an
- * expand chevron kept the default arrow while the row around it offered a
- * pointer. Inheriting puts them back in step whichever cursor the row carries.
- */
+/* A button's own UA cursor breaks inheritance; this restores it. */
 .tdg-root [data-slot="tree-toggle"],
 .tdg-root [data-slot="row-detail-toggle"] {
   cursor: inherit;
 }
 
-/*
- * The control that reveals the rest of a branch belongs to the run of rows it
- * sits in, so it takes that surface's cursor rather than the arrow a browser
- * gives a button. Its own row is not a `.tdg-row`, so it reads the token.
- */
+/* Not a `.tdg-row` itself, so it reads the token rather than inheriting. */
 .tdg-root [data-slot="tree-branch-more-button"] {
   cursor: var(--tdg-row-cursor, auto);
 }
@@ -2810,21 +2797,13 @@
   cursor: var(--tdg-mobile-row-tap-cursor, auto);
 }
 
-/*
- * The panel an open row reveals swallows its own clicks, so it is not a target
- * and must not borrow the row's pointer. Everything inside it follows.
- */
+/* Swallows its own clicks, so it must not borrow the row's pointer. */
 .tdg-root .tdg-mobile-row-fields {
   cursor: auto;
 }
 
-/*
- * A tree row's indent, paintable whether or not the row is open, so a consumer
- * can make depth legible without leaning on the small horizontal steps alone.
- * `--tdg-mobile-row-indent-bg` defaults to `transparent`, which leaves the row
- * exactly as it was, and the stop past the indent stays transparent so the
- * row's own background colour still shows through.
- */
+/* A depth guide down the indent. Transparent by default, so opting out of it
+   is the default. */
 .tdg-root .tdg-mobile-row {
   background-image: linear-gradient(
     to right,
@@ -2843,20 +2822,9 @@
   );
 }
 
-/*
- * Painted as a gradient so a tree row can leave its indent gutter clear, which
- * keeps the depth of an open node readable instead of washing the whole width
- * in one tint. `--tdg-mobile-row-indent-inset` is where the fill starts; the
- * layout sets it per row to that node's indent, so the fill takes in the
- * chevron and only the space ahead of it stays clear. At the default of `0px`
- * both stops collapse and the fill is flat across the row, which is the
- * behaviour before this rule, so clearing the inset reverses it.
- *
- * That cleared space is its own colour rather than a hole:
- * `--tdg-mobile-row-expanded-gutter-bg` defaults to `transparent`, so the
- * row's usual background shows through, and a consumer can darken it, or set
- * it to the same value as the fill to get one flat band again.
- */
+/* A gradient rather than a flat fill so the indent can stay clear and the
+   depth stay readable. The layout sets the inset per row; at `0px` both stops
+   collapse and the fill is flat, which is the behaviour before this rule. */
 .tdg-root .tdg-mobile-row[data-expanded="true"] {
   background-color: transparent !important;
   background-image: linear-gradient(

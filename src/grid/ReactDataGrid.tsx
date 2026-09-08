@@ -1117,12 +1117,9 @@ function ReactDataGrid(props: TypeDataGridProps) {
   >(() => new Set());
   const [count, setCount] = React.useState<number>(0);
   /*
-   * The mobile toolbar's search box only ever saw the rows the tree had already
-   * flattened, so a match inside a collapsed branch did not exist to find. The
-   * query is held here and handed to the loader instead, which searches every
-   * sibling group and reveals the ancestors of a match, exactly as the filter
-   * row does. Held at this level because the mobile layout unmounts the moment
-   * the viewport widens.
+   * Held here, not in the layout, which unmounts when the viewport widens. The
+   * loader searches every sibling group, so a match inside a closed branch is
+   * found and its ancestors revealed.
    */
   const [mobileSearchQuery, setMobileSearchQuery] = React.useState("");
   const treeSearchRows = React.useMemo(() => {
@@ -1143,12 +1140,8 @@ function ReactDataGrid(props: TypeDataGridProps) {
     props.treeEnabled,
   ]);
 
-  /*
-   * `treeBranchPageSize` is opt-in, because a table has always shown every
-   * child a branch has. The mobile layout is the exception: it falls back to
-   * its own page size, which is the cap it already applied, so a phone stays
-   * bounded whether or not a consumer sets the prop.
-   */
+  // Opt-in on the table, which has always shown every child. A phone stays
+  // bounded either way by falling back to its own page size.
   const treeBranchPageSize =
     props.treeBranchPageSize ??
     (mobileTransformActive

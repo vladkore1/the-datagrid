@@ -61,11 +61,9 @@ const DialogContent = React.forwardRef<
     ref
   ) => {
     /*
-     * A dialog normally portals inside the grid root, which keeps it in the
-     * grid's own stacking context. A modal sheet has to escape that: the root
-     * isolates its layers, so any host element with a z-index of its own paints
-     * over the sheet however high the sheet's own z-index is. Escaping leaves
-     * the root's custom properties behind, so the portal carries them itself.
+     * The grid root isolates its stacking layers, so a dialog portalled inside
+     * it loses to any host element with a z-index. A sheet escapes, and carries
+     * the root's custom properties, which it would otherwise leave behind.
      */
     const themeName = useDatagridThemeName();
     const themeBase = useDatagridThemeBase();

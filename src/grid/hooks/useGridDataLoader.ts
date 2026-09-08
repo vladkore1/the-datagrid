@@ -25,10 +25,7 @@ import { stripFromOrder } from "../utils/gridUtils";
 import { createLoadingStore } from "../utils/loadingStore";
 import type { InternalSearchController } from "../internalProps";
 
-/**
- * Both searches narrow the same sibling group, so a grid carrying an external
- * search box and a mobile search box applies both rather than the last one.
- */
+/** Applies both searches where a grid carries an external box and a mobile one. */
 function composeTreeSearch(
   controller: ((rows: TreeRecord[]) => TreeRecord[]) | undefined,
   layout: ((rows: TreeRecord[]) => TreeRecord[]) | undefined
