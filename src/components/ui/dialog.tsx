@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 import {
+  DatagridThemeProvider,
   useDatagridPortalContainer,
   useDatagridThemeBase,
   useDatagridThemeName,
@@ -67,11 +68,20 @@ const DialogContent = React.forwardRef<
      */
     const themeName = useDatagridThemeName();
     const themeBase = useDatagridThemeBase();
+    const gridPortalContainer = useDatagridPortalContainer();
     const escapes = container != null;
+    /*
+     * A select or menu opened inside an escaped sheet has to land beside the
+     * sheet: left in the grid root it would sit under it, unclickable.
+     */
+    const [escapedRoot, setEscapedRoot] = React.useState<HTMLDivElement | null>(
+      null
+    );
 
     return (
       <DialogPortal container={container}>
         <div
+          ref={escapes ? setEscapedRoot : undefined}
           className={cn("tdg-dialog-portal", escapes && "tdg-tokens")}
           data-slot="dialog-portal"
           data-theme={
@@ -92,7 +102,13 @@ const DialogContent = React.forwardRef<
             )}
             {...props}
           >
-            {children}
+            <DatagridThemeProvider
+              theme={themeName}
+              themeBase={themeBase}
+              portalContainer={escapes ? escapedRoot : gridPortalContainer}
+            >
+              {children}
+            </DatagridThemeProvider>
             <DialogPrimitive.Close
               data-slot="dialog-close"
               className="tdg-dialog-close absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
