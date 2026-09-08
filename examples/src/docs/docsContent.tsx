@@ -810,6 +810,28 @@ const mobileTransformFieldRows: ReferenceRow[] = [
   },
 ];
 
+const escapeHatchSnippet = `/* Layout has no token, so target the class. */
+.tdg-toolbar-root {
+  flex-wrap: wrap;
+  justify-content: end;
+  padding: 10px 0;
+  gap: 6px;
+  border: none;
+}
+
+/* One shared token beats naming each control. */
+.tdg-toolbar-root {
+  --tdg-toolbar-control-fill: var(--button-primary-fill);
+  --tdg-toolbar-control-color: var(--button-primary-color);
+  --tdg-toolbar-control-border-color: transparent;
+  --tdg-toolbar-control-hover-fill: var(--button-primary-hover);
+}
+
+/* Inside the grid, structure is armoured, so say so. */
+.tdg-root .tdg-mobile-row {
+  padding-inline: 1.25rem !important;
+}`;
+
 const hierarchyTreePropRows: ReferenceRow[] = [
   {
     name: "treeEnabled",
@@ -6344,6 +6366,47 @@ pnpm add @geovi/the-datagrid`}
               and toolbar styles are scoped to their respective component roots.
               This avoids leaking generic shadcn token aliases into the host
               application.
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: "styling-beyond-tokens",
+        title: "When a token is not enough",
+        body: (
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Tokens cover colour and spacing. They do not cover layout, and
+              they should not: nothing sensible can be a token for "lay the
+              toolbar out differently in my app". For that, write CSS against
+              the grid's own class names and <code>data-slot</code> attributes.
+            </p>
+            <CodeBlock code={escapeHatchSnippet} language="scss" />
+            <Callout title="Two surfaces, two rules">
+              <p>
+                The toolbar and search bar wrap their selectors in{" "}
+                <code>:where()</code>, which costs no specificity, so your rule
+                wins without <code>!important</code>. The grid's own stylesheet
+                is the opposite on purpose: structural rules carry{" "}
+                <code>!important</code> so a hostile host stylesheet cannot
+                collapse a row or a column. Overriding layout inside the grid
+                needs <code>!important</code> back.
+              </p>
+            </Callout>
+            <p>
+              What is safe to target: the <code>tdg-</code> class on a root
+              element, and any <code>data-slot</code> value. Those are stable.
+              Anything else in the markup is internal and may move.
+            </p>
+            <p>
+              Reach for a shared token before enumerating slots. Every toolbar
+              control takes its colours from{" "}
+              <code>--tdg-toolbar-control-fill</code>,{" "}
+              <code>--tdg-toolbar-control-color</code> and{" "}
+              <code>--tdg-toolbar-control-border-color</code> (plus the two{" "}
+              <code>-hover-</code> pair), whatever family or state it is in, so
+              three declarations restyle the lot. The per-family tokens still
+              win where you set them.
             </p>
           </div>
         ),

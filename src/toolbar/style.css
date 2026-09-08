@@ -174,19 +174,45 @@
    * `action` is export and clear-filters, which command rather than report and so
    * always look pressable.
    */
-  --tdg-toolbar-action-fill: transparent;
-  --tdg-toolbar-action-color: inherit;
-  --tdg-toolbar-action-border-color: var(--tdg-toolbar-input);
-  --tdg-toolbar-action-hover-fill: var(--tdg-toolbar-accent);
-  --tdg-toolbar-action-hover-color: var(--tdg-toolbar-accent-foreground);
+  /*
+   * `--tdg-toolbar-control-*` is the one place to repaint every control at once,
+   * whatever family or state. It is deliberately left unset, so each family
+   * below keeps its own default until a consumer sets the shared one.
+   */
+  --tdg-toolbar-action-fill: var(--tdg-toolbar-control-fill, transparent);
+  --tdg-toolbar-action-color: var(--tdg-toolbar-control-color, inherit);
+  --tdg-toolbar-action-border-color: var(
+    --tdg-toolbar-control-border-color,
+    var(--tdg-toolbar-input)
+  );
+  --tdg-toolbar-action-hover-fill: var(
+    --tdg-toolbar-control-hover-fill,
+    var(--tdg-toolbar-accent)
+  );
+  --tdg-toolbar-action-hover-color: var(
+    --tdg-toolbar-control-hover-color,
+    var(--tdg-toolbar-accent-foreground)
+  );
 
   /* Released: a hidden column, a hidden filter row. Gives up the edge and dims
    * the label. */
-  --tdg-toolbar-toggle-off-fill: transparent;
-  --tdg-toolbar-toggle-off-color: var(--tdg-toolbar-muted-foreground);
-  --tdg-toolbar-toggle-off-border-color: transparent;
-  --tdg-toolbar-toggle-off-hover-fill: var(--tdg-toolbar-accent);
-  --tdg-toolbar-toggle-off-hover-color: var(--tdg-toolbar-accent-foreground);
+  --tdg-toolbar-toggle-off-fill: var(--tdg-toolbar-control-fill, transparent);
+  --tdg-toolbar-toggle-off-color: var(
+    --tdg-toolbar-control-color,
+    var(--tdg-toolbar-muted-foreground)
+  );
+  --tdg-toolbar-toggle-off-border-color: var(
+    --tdg-toolbar-control-border-color,
+    transparent
+  );
+  --tdg-toolbar-toggle-off-hover-fill: var(
+    --tdg-toolbar-control-hover-fill,
+    var(--tdg-toolbar-accent)
+  );
+  --tdg-toolbar-toggle-off-hover-color: var(
+    --tdg-toolbar-control-hover-color,
+    var(--tdg-toolbar-accent-foreground)
+  );
 
   /*
    * Pressed: a visible column, a visible filter row. The export trigger borrows
@@ -196,11 +222,26 @@
    * surface; where the page leaves the two the same colour (a white page, light
    * theme) the border carries the state alone.
    */
-  --tdg-toolbar-toggle-on-fill: var(--tdg-toolbar-card);
-  --tdg-toolbar-toggle-on-color: var(--tdg-toolbar-foreground);
-  --tdg-toolbar-toggle-on-border-color: var(--tdg-toolbar-input);
-  --tdg-toolbar-toggle-on-hover-fill: var(--tdg-toolbar-accent);
-  --tdg-toolbar-toggle-on-hover-color: var(--tdg-toolbar-accent-foreground);
+  --tdg-toolbar-toggle-on-fill: var(
+    --tdg-toolbar-control-fill,
+    var(--tdg-toolbar-card)
+  );
+  --tdg-toolbar-toggle-on-color: var(
+    --tdg-toolbar-control-color,
+    var(--tdg-toolbar-foreground)
+  );
+  --tdg-toolbar-toggle-on-border-color: var(
+    --tdg-toolbar-control-border-color,
+    var(--tdg-toolbar-input)
+  );
+  --tdg-toolbar-toggle-on-hover-fill: var(
+    --tdg-toolbar-control-hover-fill,
+    var(--tdg-toolbar-accent)
+  );
+  --tdg-toolbar-toggle-on-hover-color: var(
+    --tdg-toolbar-control-hover-color,
+    var(--tdg-toolbar-accent-foreground)
+  );
 
   /* Font size is per family so the two keep their distinct scale by default. */
   --tdg-toolbar-toggle-font-size: 0.875rem;
