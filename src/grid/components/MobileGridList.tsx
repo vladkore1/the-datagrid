@@ -2086,6 +2086,12 @@ export function MobileGridList({
       {/* The shell centres itself with a translate as well as an offset: the
           offset is overruled in the stylesheet, the translate here. */}
       <DialogContent
+        /*
+         * Portalled out of the grid root on purpose: the root isolates its
+         * stacking layers, so a host header with a z-index of its own would
+         * paint over this sheet whatever z-index the sheet carried.
+         */
+        container={typeof document === "undefined" ? undefined : document.body}
         className="tdg-mobile-settings-drawer translate-x-0 translate-y-0 gap-0"
         data-closing={drawerClosing ? "true" : undefined}
         overlayClassName={cn(
