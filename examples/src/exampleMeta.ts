@@ -2,6 +2,7 @@ import actionsExampleSource from "./ActionsGridExample.tsx?raw";
 import basicExampleSource from "./BasicGridExample.tsx?raw";
 import columnsExampleSource from "./ColumnsGridExample.tsx?raw";
 import editingExampleSource from "./EditingGridExample.tsx?raw";
+import hierarchyExampleSource from "./HierarchyExamplePage.tsx?raw";
 import inovuaParityExampleSource from "./InovuaParityCompatPage.tsx?raw";
 import mobileTransformExampleSource from "./MobileTransformExample.tsx?raw";
 import {
@@ -23,6 +24,7 @@ const sourceById: Record<ExampleId, string> = {
   basic: basicExampleSource,
   columns: columnsExampleSource,
   editing: editingExampleSource,
+  hierarchy: hierarchyExampleSource,
   "inovua-parity": inovuaParityExampleSource,
   "mobile-transform": mobileTransformExampleSource,
   selection: selectionExampleSource,

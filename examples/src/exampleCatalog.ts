@@ -3,6 +3,7 @@ export type ExampleId =
   | "basic"
   | "columns"
   | "editing"
+  | "hierarchy"
   | "inovua-parity"
   | "mobile-transform"
   | "selection"
@@ -73,6 +74,19 @@ export const exampleCatalog: ExampleCatalogEntry[] = [
       "Commits are confirmed live through a saved banner and an activity log. Shows column-level onEditComplete running before the grid-level handler, an async persist that the grid waits on, and why some editors and filters are imports while others are not.",
     sourcePath: "examples/src/EditingGridExample.tsx",
     tags: ["Editing", "Editors", "Filtering"],
+  },
+  {
+    id: "hierarchy",
+    to: "/examples/hierarchy",
+    legacyTo: "/hierarchy",
+    label: "Hierarchy",
+    title: "Tree grid and master-detail",
+    summary:
+      "Nested tree rows and expandable detail panels using the opt-in Inovua-compatible hierarchy API.",
+    details:
+      "Shows collapsed-by-default branches, ancestor-preserving filters, controlled expansion, virtualization, custom tree controls, and nested grids inside master-detail panels.",
+    sourcePath: "examples/src/HierarchyExamplePage.tsx",
+    tags: ["Tree grid", "Master-detail", "Filtering", "Virtualized"],
   },
   {
     id: "inovua-parity",

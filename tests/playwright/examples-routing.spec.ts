@@ -234,6 +234,34 @@ test("navigates between docs and dedicated example pages", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("lists the hierarchy showcase in the examples catalog", async ({
+  page,
+}) => {
+  await page.goto("/examples");
+
+  const hierarchyCard = page.locator("article", {
+    has: page.getByRole("heading", {
+      name: "Tree grid and master-detail",
+    }),
+  });
+  await expect(hierarchyCard).toBeVisible();
+  await expect(
+    hierarchyCard.getByText("examples/src/HierarchyExamplePage.tsx")
+  ).toBeVisible();
+
+  const examplesSearch = page.getByLabel("Search examples");
+  await examplesSearch.fill("tree grid");
+  await expect(hierarchyCard).toBeVisible();
+  await expect(page.locator("article")).toHaveCount(1);
+
+  await hierarchyCard.getByRole("link", { name: "Open example" }).click();
+  await expect(page).toHaveURL(/\/examples\/hierarchy$/);
+  await expect(page.getByTestId("hierarchy-showcase")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tree rows. Rich details." })
+  ).toBeVisible();
+});
+
 test("docs home quick install snippets are one-click copy targets", async ({
   page,
 }) => {
