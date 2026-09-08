@@ -228,3 +228,42 @@ export function filterDataGridSearchIndex<Row>(
     })
     .map((entry) => entry.row);
 }
+
+/**
+ * The columns a mobile search actually looks at, in one place because both the
+ * layout that renders the box and the grid that searches a tree behind it have
+ * to agree on the answer.
+ */
+export function resolveSearchedColumns(
+  searchColumns: readonly TypeColumn[],
+  options: { searchColumnIds?: string[]; checkboxColumnId?: string }
+): TypeColumn[] {
+  const searchable = searchColumns.filter(
+    (column) =>
+      column.searchable !== false &&
+      getColumnId(column) !== options.checkboxColumnId &&
+      // Only the declared role, never the name heuristic: a column called
+      // "options" can still hold text worth searching.
+      column.mobileRole !== "action" &&
+      column.mobileRole !== "hidden"
+  );
+  if (!options.searchColumnIds) return [...searchColumns];
+  const wanted = new Set(options.searchColumnIds);
+  const kept = searchable.filter((column) => wanted.has(getColumnId(column)));
+  // An empty scope would search nothing at all, which no consumer means by
+  // handing over an empty array.
+  return kept.length ? kept : [...searchColumns];
+}
+
+/** Keeps the rows a query matches, over plain records rather than row models. */
+export function filterRecordsByDataGridSearch<Row>(
+  rows: readonly Row[],
+  columns: readonly TypeColumn[],
+  query: string
+): Row[] {
+  if (normalizeDataGridSearchText(query).length === 0) return [...rows];
+  return filterDataGridSearchIndex(
+    buildDataGridSearchIndex(rows, columns),
+    query
+  );
+}

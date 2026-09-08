@@ -106,8 +106,9 @@ export function resolveMobileTransform(params: {
   allowMobileTransform: boolean;
   mobileTransform?: TypeMobileTransformProps;
   gridPaginationEnabled: boolean;
+  treeEnabled: boolean;
 }): ResolvedMobileTransform {
-  const { allowMobileTransform, gridPaginationEnabled } = params;
+  const { allowMobileTransform, gridPaginationEnabled, treeEnabled } = params;
   const hasMobileTransformConfig = params.mobileTransform != null;
   const config = params.mobileTransform ?? {};
   const scroll = config.scroll ?? "container";
@@ -124,20 +125,40 @@ export function resolveMobileTransform(params: {
    */
   const listFieldIds = toFieldIds(config.listFieldIds);
 
-  const overflow: TypeMobileTransformOverflow = gridPaginationEnabled
+  const requestedOverflow: TypeMobileTransformOverflow = gridPaginationEnabled
     ? "none"
     : (config.overflow ?? (scroll === "page" ? "show-more" : "none"));
+
+  /*
+   * A numbered page over a tree cuts mid-branch, and the boundary moves as the
+   * viewer expands. Revealing more instead keeps a branch whole, and the tree
+   * budget caps each set of siblings so one node with thousands of children
+   * cannot flood the layout.
+   */
+  const overflow: TypeMobileTransformOverflow =
+    treeEnabled &&
+    (requestedOverflow === "pagination" || requestedOverflow === "both")
+      ? "show-more"
+      : requestedOverflow;
 
   return {
     enabled: config.enabled ?? allowMobileTransform,
     mediaQuery: toMobileTransformMediaQuery(config.breakpoint),
     scroll,
-    variant: config.variant,
+    /*
+     * A card draws its own box, and a box cannot carry indentation: the border
+     * reads as the unit, so a nested node looks like a misaligned card rather
+     * than a child. The list is the only variant that can express a tree, so a
+     * tree grid stays on it.
+     */
+    variant: treeEnabled ? "list" : config.variant,
     // `allowMobileTransform` shipped as a cards-only layout. Preserve that
     // behavior until the new configuration object explicitly opts into the
     // cards/list feature.
-    defaultVariant:
-      config.defaultVariant ?? (hasMobileTransformConfig ? "list" : "cards"),
+    defaultVariant: treeEnabled
+      ? "list"
+      : (config.defaultVariant ??
+        (hasMobileTransformConfig ? "list" : "cards")),
     listRows: config.listRows ?? "divided",
     listActions: config.listActions ?? "inline",
     listActionsSide: config.listActionsSide ?? "end",
@@ -149,8 +170,12 @@ export function resolveMobileTransform(params: {
     // Both follow the configuration object rather than the old
     // `allowMobileTransform` path, which keeps its original behaviour.
     listExpand:
-      config.listExpand ?? (hasMobileTransformConfig ? "click" : "none"),
-    showRowExpandToggle: config.showRowExpandToggle ?? true,
+      config.listExpand ??
+      (treeEnabled || hasMobileTransformConfig ? "click" : "none"),
+    // One chevron per row, and on a tree it belongs to the branch. The row's
+    // own tap is what reaches the fields.
+    showRowExpandToggle:
+      config.showRowExpandToggle ?? (treeEnabled ? false : true),
     cardFields:
       config.cardFields ?? (hasMobileTransformConfig ? "auto" : "stacked"),
     cardColumns: config.cardColumns ?? "auto",
@@ -159,7 +184,9 @@ export function resolveMobileTransform(params: {
       config.cardFieldLimit,
       MOBILE_CARD_DEFAULT_FIELD_LIMIT
     ),
-    showVariantToggle: config.showVariantToggle ?? hasMobileTransformConfig,
+    showVariantToggle: treeEnabled
+      ? false
+      : (config.showVariantToggle ?? hasMobileTransformConfig),
     showToolbar: config.showToolbar ?? true,
     // Left undefined where the default belongs to the grid, which is the only
     // place that knows about a search box or a toolbar mounted outside it.

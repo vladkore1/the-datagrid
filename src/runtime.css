@@ -2773,10 +2773,69 @@
  * winner to stylesheet order. Half of a near-white token is about as light as
  * this can go and still be seen; a fifth of it was invisible.
  */
+/*
+ * A tree row's indent, paintable whether or not the row is open, so a consumer
+ * can make depth legible without leaning on the small horizontal steps alone.
+ * `--tdg-mobile-row-indent-bg` defaults to `transparent`, which leaves the row
+ * exactly as it was, and the stop past the indent stays transparent so the
+ * row's own background colour still shows through.
+ */
+.tdg-root .tdg-mobile-row {
+  background-image: linear-gradient(
+    to right,
+    var(--tdg-mobile-row-indent-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    transparent var(--tdg-mobile-row-indent-inset, 0px) 100%
+  );
+}
+
+[dir="rtl"] .tdg-root .tdg-mobile-row {
+  background-image: linear-gradient(
+    to left,
+    var(--tdg-mobile-row-indent-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    transparent var(--tdg-mobile-row-indent-inset, 0px) 100%
+  );
+}
+
+/*
+ * Painted as a gradient so a tree row can leave its indent gutter clear, which
+ * keeps the depth of an open node readable instead of washing the whole width
+ * in one tint. `--tdg-mobile-row-indent-inset` is where the fill starts; the
+ * layout sets it per row to that node's indent, so the fill takes in the
+ * chevron and only the space ahead of it stays clear. At the default of `0px`
+ * both stops collapse and the fill is flat across the row, which is the
+ * behaviour before this rule, so clearing the inset reverses it.
+ *
+ * That cleared space is its own colour rather than a hole:
+ * `--tdg-mobile-row-expanded-gutter-bg` defaults to `transparent`, so the
+ * row's usual background shows through, and a consumer can darken it, or set
+ * it to the same value as the fill to get one flat band again.
+ */
 .tdg-root .tdg-mobile-row[data-expanded="true"] {
-  background: var(
-    --tdg-mobile-row-expanded-bg,
-    color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to right,
+    var(--tdg-mobile-row-expanded-gutter-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    var(
+        --tdg-mobile-row-expanded-bg,
+        color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
+      )
+      var(--tdg-mobile-row-indent-inset, 0px) 100%
+  ) !important;
+}
+
+[dir="rtl"] .tdg-root .tdg-mobile-row[data-expanded="true"] {
+  background-image: linear-gradient(
+    to left,
+    var(--tdg-mobile-row-expanded-gutter-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    var(
+        --tdg-mobile-row-expanded-bg,
+        color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
+      )
+      var(--tdg-mobile-row-indent-inset, 0px) 100%
   ) !important;
 }
 

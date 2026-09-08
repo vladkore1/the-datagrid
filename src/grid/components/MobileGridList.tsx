@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { TreeGridController } from "../hierarchy/useTreeGrid";
 import type { UseMasterDetailResult } from "../hierarchy/useMasterDetail";
+import type { TreeRecord } from "../hierarchy/treeData";
 import { flexRender, type Cell, type Row } from "@tanstack/react-table";
 import { useVirtualizer, useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -122,6 +123,10 @@ type MobileGridListProps = {
   settingsSurface?: TypeMobileSettingsSurface;
   /** Columns the search reads. Undefined searches every searchable column. */
   searchColumnIds?: string[];
+  /** Reports the committed query so the grid can search behind the layout. */
+  onQueryChange?: (query: string) => void;
+  /** The grid already searched and revealed; filtering again would undo it. */
+  searchHandledUpstream?: boolean;
   onSearchColumnIdsChange?: (columnIds: string[]) => void;
   /** Rest position of the sticky toolbar, as a CSS length. */
   stickyOffset?: string;
@@ -192,6 +197,30 @@ const ID_COLUMN = /(^|[-_\s])(id|uuid|key|code|number|no)($|[-_\s])/i;
  * band and spans the full width, or items scroll through the gap above and
  * beside it.
  */
+/*
+ * A phone cannot spend the desktop's 22px a level and still leave a label room.
+ * The toggle stays square as it is on desktop and a size up from it, which
+ * takes a tap without the bulk of a full 44px control.
+ */
+const MOBILE_TREE_TOGGLE_SIZE = "2.25rem";
+const MOBILE_TREE_TOGGLE = {
+  nestingSize: "var(--tdg-mobile-tree-indent, 1rem)",
+  buttonClassName: "size-9",
+} as const;
+
+/**
+ * Where a node's own content starts, so an opened panel lines up with its
+ * title: the indent, the toggle, and the gap the row puts after it.
+ */
+function mobileTreeContentOffset(depth: number) {
+  return `calc(var(--tdg-mobile-tree-indent, 1rem) * ${depth} + ${MOBILE_TREE_TOGGLE_SIZE} + var(--tdg-mobile-row-gap, 0.75rem))`;
+}
+
+/** The indent alone, which is the part of an open row left unpainted. */
+function mobileTreeIndentOffset(depth: number) {
+  return `calc(var(--tdg-mobile-tree-indent, 1rem) * ${depth})`;
+}
+
 const SETTINGS_DRAWER_EXIT_MS = 180;
 
 const SETTINGS_SECTION_LABEL =
@@ -280,6 +309,8 @@ export function MobileGridList({
   showSettings = false,
   settingsSurface = "drawer",
   searchColumnIds,
+  onQueryChange,
+  searchHandledUpstream = false,
   onSearchColumnIdsChange,
   stickyOffset,
   authoritativeResultCount,
@@ -379,6 +410,9 @@ export function MobileGridList({
   const boxedListEndGutters =
     !pageScroll && activeVariant === "list" && boxedListRows && !plainChrome;
   const deferredQuery = useDeferredValueCompat(committedQuery);
+  React.useEffect(() => {
+    onQueryChange?.(committedQuery);
+  }, [committedQuery, onQueryChange]);
   const sortButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
   const pageBodyRef = React.useRef<HTMLDivElement | null>(null);
@@ -466,7 +500,8 @@ export function MobileGridList({
   const hasDeferredQuery =
     normalizeDataGridSearchText(deferredQuery).length > 0;
   const searchIndex = React.useMemo(() => {
-    if (!searchEnabled || !hasDeferredQuery) return null;
+    if (!searchEnabled || !hasDeferredQuery || searchHandledUpstream)
+      return null;
 
     const cachedIndex = searchIndexCache.current;
     if (
@@ -483,7 +518,13 @@ export function MobileGridList({
     );
     searchIndexCache.current = { columns: activeSearchColumns, index, rows };
     return index;
-  }, [activeSearchColumns, hasDeferredQuery, rows, searchEnabled]);
+  }, [
+    activeSearchColumns,
+    hasDeferredQuery,
+    rows,
+    searchEnabled,
+    searchHandledUpstream,
+  ]);
   const filteredRows = React.useMemo(() => {
     if (!searchEnabled || !searchIndex) return rows;
     return filterDataGridSearchIndex(searchIndex, deferredQuery);
@@ -542,13 +583,35 @@ export function MobileGridList({
   React.useEffect(() => {
     setRevealed(initialReveal);
   }, [deferredQuery, initialReveal, safePageIndex, sortInfo]);
+
+  /*
+   * A tree is budgeted per branch upstream, roots included, so slicing the flat
+   * run here as well would cut a branch's own control off the end of the list
+   * and leave no way to reveal the rest.
+   */
   const visibleRows = React.useMemo(
-    () => (showMoreEnabled ? pageRows.slice(0, revealed) : pageRows),
-    [pageRows, revealed, showMoreEnabled]
+    () =>
+      showMoreEnabled && !tree.enabled ? pageRows.slice(0, revealed) : pageRows,
+    [pageRows, revealed, showMoreEnabled, tree.enabled]
   );
-  const canShowMore = showMoreEnabled && revealed < pageRows.length;
-  // Whichever pager is on screen, its page is what the scroll effect follows.
+  /*
+   * A tree budgets each branch upstream, roots included, and offers every cut
+   * branch its own control, so the single control under the list would be a
+   * second way to do the same thing.
+   */
+  const canShowMore =
+    showMoreEnabled && !tree.enabled && revealed < pageRows.length;
+  const branchTruncationByRowId = React.useMemo(() => {
+    const byRow = new Map<string, (typeof tree.branchTruncations)[number]>();
+    for (const truncation of tree.branchTruncations)
+      byRow.set(truncation.afterRowId, truncation);
+    return byRow;
+  }, [tree.branchTruncations]);
   const pagerPageIndex = gridPaging ? gridPaging.pageIndex : safePageIndex;
+  // Read through a ref because the controller rebuilds it on every render, and
+  // a node's depth only moves when the rows themselves do.
+  const getTreeMetadataRef = React.useRef(tree.getMetadata);
+  getTreeMetadataRef.current = tree.getMetadata;
 
   const visibleDisplayColumnCount = displayColumns.reduce(
     (count, column) =>
@@ -985,6 +1048,8 @@ export function MobileGridList({
     // Separators sit between rows, so the last one carries no rule.
     const isFirstRow = virtualIndex === 0;
     const isLastRow = virtualIndex === visibleRows.length - 1;
+    // A branch control after the row is what closes the group, not the row.
+    const branchMoreFollows = branchTruncationByRowId.has(row.id);
     const rowIndex = row.index;
     const rowIsDisabled = isRowDisabled(rowIndex);
     const rowIsSelected = Boolean(selectedMap[row.id]);
@@ -1082,9 +1147,34 @@ export function MobileGridList({
       "aria-current": rowIsActive ? "true" : undefined,
       "aria-selected": selectionEnabled ? rowIsSelected : undefined,
     } as const;
+    const treeDepth = tree.enabled
+      ? (getTreeMetadataRef.current(row.original as TreeRecord)?.depth ?? 0)
+      : undefined;
+    /*
+     * A card puts its leading controls in the header and everything else under
+     * it, so the body has to clear the same controls by hand or it hangs to
+     * their left. The toggle a card shows is its only way into the brief, so it
+     * is not subject to `showRowExpandToggle`.
+     */
+    const cardIndentParts: string[] = [];
+    if (treeDepth != null) {
+      cardIndentParts.push(
+        `var(--tdg-mobile-tree-indent, 1rem) * ${treeDepth}`,
+        MOBILE_TREE_TOGGLE_SIZE
+      );
+    }
+    if (
+      masterDetail.showColumn &&
+      masterDetail.isExpandable(row.original, rowIndex)
+    ) {
+      cardIndentParts.push("1.75rem");
+    }
+    const cardBodyIndent = cardIndentParts.length
+      ? `calc(${cardIndentParts.join(" + ")} + var(--tdg-mobile-card-gap, 0.75rem))`
+      : undefined;
     const hierarchyControls = (
       <>
-        {tree.renderToggle(row.original, rowIndex)}
+        {tree.renderToggle(row.original, rowIndex, MOBILE_TREE_TOGGLE)}
         {masterDetail.showColumn
           ? masterDetail.renderToggle(row.original, rowIndex)
           : null}
@@ -1111,10 +1201,46 @@ export function MobileGridList({
     ) : null;
 
     if (activeVariant === "list") {
-      const expandable = rowsExpandable && detailCells.length > 0;
-      const rowExpanded = expandable && expandedRowIds.has(row.id);
+      /*
+       * A brief and the row's own fields are one open region here, not two.
+       * Master-detail owns the open state whenever it applies, so a consumer's
+       * `expandedRows` and its callbacks stay authoritative, and the row needs
+       * only one control: the chevron does what tapping the row does.
+       */
+      const briefActive =
+        masterDetail.enabled &&
+        masterDetail.isExpandable(row.original, rowIndex);
+      /*
+       * On a tree this control is the only way into a node's details, since the
+       * chevron beside it belongs to the branch, so it ignores
+       * `showRowExpandToggle`. A flat grid can hide it and open the row by tap.
+       */
+      const briefToggleShown =
+        briefActive && (tree.enabled || showRowExpandToggle);
+      const expandable =
+        rowsExpandable && (detailCells.length > 0 || briefActive);
+      const rowExpanded = briefActive
+        ? masterDetail.isExpanded(row.original, rowIndex)
+        : expandable && expandedRowIds.has(row.id);
       const fieldsPanelId = `${rowIdPrefix}-${rowIndex}-fields`;
-      const toggleFields = () => toggleExpandedRow(row.id);
+      const toggleFields = briefActive
+        ? () => masterDetail.toggle(row.original, rowIndex)
+        : () => toggleExpandedRow(row.id);
+
+      // Clears whatever leading controls the row shows, so the open region
+      // lines up with the title rather than the row's edge.
+      const openIndentParts: string[] = [];
+      if (treeDepth != null) {
+        openIndentParts.push(
+          `var(--tdg-mobile-tree-indent, 1rem) * ${treeDepth}`,
+          MOBILE_TREE_TOGGLE_SIZE
+        );
+      }
+      if (briefToggleShown) openIndentParts.push("1.75rem");
+      const openRegionIndent = openIndentParts.length
+        ? `calc(${openIndentParts.join(" + ")} + var(--tdg-mobile-row-gap, 0.75rem))`
+        : undefined;
+
       const listRowHandlers =
         expandable && listExpand === "click" && !rowIsDisabled
           ? {
@@ -1125,6 +1251,14 @@ export function MobileGridList({
               },
             }
           : rowHandlers;
+      const listHierarchyControls = (
+        <>
+          {tree.renderToggle(row.original, rowIndex, MOBILE_TREE_TOGGLE)}
+          {briefToggleShown
+            ? masterDetail.renderToggle(row.original, rowIndex)
+            : null}
+        </>
+      );
 
       return (
         <article
@@ -1147,10 +1281,19 @@ export function MobileGridList({
               "rounded-t-[var(--tdg-mobile-list-radius,0.5rem)] border-t",
             boxedListRows &&
               isLastRow &&
+              !branchMoreFollows &&
               "rounded-b-[var(--tdg-mobile-list-radius,0.5rem)]",
             stateClassName
           )}
           {...rowAttributes}
+          style={
+            treeDepth == null
+              ? undefined
+              : ({
+                  "--tdg-mobile-row-indent-inset":
+                    mobileTreeIndentOffset(treeDepth),
+                } as React.CSSProperties)
+          }
           data-expanded={rowExpanded ? "true" : undefined}
           aria-expanded={
             expandable && !showRowExpandToggle ? rowExpanded : undefined
@@ -1163,7 +1306,7 @@ export function MobileGridList({
               bottomListActions ? "w-full" : "contents"
             )}
           >
-            {hierarchyControls}
+            {listHierarchyControls}
             {checkboxCell ? (
               <div className="shrink-0">
                 {flexRender(
@@ -1209,7 +1352,7 @@ export function MobileGridList({
                 </div>
               ) : null}
             </div>
-            {expandable && showRowExpandToggle ? (
+            {expandable && showRowExpandToggle && !briefActive ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -1267,10 +1410,42 @@ export function MobileGridList({
               className="tdg-mobile-row-fields mt-1 w-full basis-full animate-in duration-150 fade-in-0 slide-in-from-top-1"
               onClick={(event) => event.stopPropagation()}
             >
-              {renderDetailList(detailCells, "gap-y-2")}
+              {detailCells.length ? (
+                <div
+                  style={
+                    openRegionIndent
+                      ? { paddingInlineStart: openRegionIndent }
+                      : undefined
+                  }
+                >
+                  {renderDetailList(detailCells, "gap-y-2")}
+                </div>
+              ) : null}
+              {briefActive ? (
+                <div
+                  id={masterDetail.getPanelId(row.original, rowIndex)}
+                  data-slot="row-details"
+                  data-row-id={row.id}
+                  role="region"
+                  aria-label={`Details for ${row.id}`}
+                  /* Sized by its content: `rowExpandHeight` would put a scroll
+                     region inside the page's own scroll on a phone. Lined up
+                     with the title by default; a consumer who wants the brief
+                     to run wider sets the inset, and reaches the row's own
+                     edge by taking `--tdg-mobile-row-padding-x` down too. */
+                  style={{
+                    paddingInlineStart: `var(--tdg-mobile-row-details-inset, ${openRegionIndent ?? "0px"})`,
+                  }}
+                  className={cn(
+                    "w-full",
+                    detailCells.length && "mt-3 border-t border-border pt-3"
+                  )}
+                >
+                  {masterDetail.renderDetails(row.original, rowIndex)}
+                </div>
+              ) : null}
             </div>
           ) : null}
-          {detailsPanel}
         </article>
       );
     }
@@ -1311,46 +1486,100 @@ export function MobileGridList({
             ) : null}
           </div>
         </header>
-        {detailCells.length
-          ? renderDetailList(visibleDetailCells, "mt-4")
-          : null}
-        {overflowDetailCells.length ? (
-          <details
-            className="mt-3 border-t pt-3 [border-color:var(--tdg-grid-border-color)]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <summary className="cursor-pointer text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-              {overflowDetailCells.length}{" "}
-              {label(
-                overflowDetailCells.length === 1
-                  ? "mobileMoreField"
-                  : "mobileMoreFields",
-                overflowDetailCells.length === 1 ? "more field" : "more fields"
-              )}
-            </summary>
-            {renderDetailList(overflowDetailCells, "mt-3")}
-          </details>
-        ) : null}
-        {actionCells.length ? (
-          <footer className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t pt-3 [border-color:var(--tdg-grid-border-color)]">
-            {actionCells.map((cell) => (
-              <div
-                key={cell.id}
-                className="tdg-mobile-cell"
-                data-slot="mobile-cell"
-                data-cell-role="action"
-              >
-                {renderCellContent(cell)}
-              </div>
-            ))}
-          </footer>
-        ) : null}
-        {detailsPanel}
+        <div
+          style={
+            cardBodyIndent ? { paddingInlineStart: cardBodyIndent } : undefined
+          }
+        >
+          {detailCells.length
+            ? renderDetailList(visibleDetailCells, "mt-4")
+            : null}
+          {overflowDetailCells.length ? (
+            <details
+              className="mt-3 border-t pt-3 [border-color:var(--tdg-grid-border-color)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <summary className="cursor-pointer text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                {overflowDetailCells.length}{" "}
+                {label(
+                  overflowDetailCells.length === 1
+                    ? "mobileMoreField"
+                    : "mobileMoreFields",
+                  overflowDetailCells.length === 1
+                    ? "more field"
+                    : "more fields"
+                )}
+              </summary>
+              {renderDetailList(overflowDetailCells, "mt-3")}
+            </details>
+          ) : null}
+          {actionCells.length ? (
+            <footer className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t pt-3 [border-color:var(--tdg-grid-border-color)]">
+              {actionCells.map((cell) => (
+                <div
+                  key={cell.id}
+                  className="tdg-mobile-cell"
+                  data-slot="mobile-cell"
+                  data-cell-role="action"
+                >
+                  {renderCellContent(cell)}
+                </div>
+              ))}
+            </footer>
+          ) : null}
+          {detailsPanel}
+        </div>
       </article>
     );
   };
 
   // Rendered even when empty: it is the list landmark, and the page-scroll
+  /*
+   * Rides along inside the row it follows so the virtualizer keeps one item per
+   * row: a heterogeneous item list would put markers into every index it maps.
+   */
+  const renderBranchMore = (index: number) => {
+    const row = visibleRows[index];
+    const truncation = row ? branchTruncationByRowId.get(row.id) : undefined;
+    if (!truncation) return null;
+    return (
+      <div
+        className={cn(
+          // Padded so the control's hover fill stops short of the rules above
+          // and below it rather than meeting them.
+          "tdg-mobile-branch-more flex w-full py-1.5",
+          // Boxed rows enclose the run in one border, so the control has to be
+          // a member of that group rather than a loose block splitting it.
+          boxedListRows &&
+            cn(
+              "border-x border-b bg-[var(--tdg-mobile-list-bg,var(--tdg-grid-bg))]",
+              "[border-color:var(--tdg-mobile-list-border-color,var(--tdg-grid-border-color))]",
+              index === visibleRows.length - 1 &&
+                "rounded-b-[var(--tdg-mobile-list-radius,0.5rem)]"
+            )
+        )}
+        style={{
+          paddingInlineStart: mobileTreeContentOffset(truncation.depth),
+        }}
+        data-slot="mobile-branch-more"
+        data-depth={truncation.depth}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-9 justify-start px-2 text-sm text-muted-foreground"
+          onClick={() => tree.revealBranch(truncation.branchKey, showMoreStep)}
+        >
+          {mobileShowMoreValue}
+          {/* What is left in this branch, not what one press reveals. */}
+          <span className="ml-1 tabular-nums opacity-70">
+            ({truncation.hidden})
+          </span>
+        </Button>
+      </div>
+    );
+  };
+
   // virtualizer measures its document offset through `listRef`.
   const listBody = (
     <div
@@ -1386,6 +1615,12 @@ export function MobileGridList({
               boxedListEndGutters && virtualRow.index === 0 && "pt-3",
               boxedListEndGutters &&
                 virtualRow.index === visibleRows.length - 1 &&
+                "pb-3",
+              /* A card's run leaves 6px under the last one against 12px at its
+                 sides, which reads as the list having been cut off. */
+              activeVariant === "cards" &&
+                !plainChrome &&
+                virtualRow.index === visibleRows.length - 1 &&
                 "pb-3"
             )}
             style={{
@@ -1394,6 +1629,7 @@ export function MobileGridList({
             role="listitem"
           >
             {renderRow(virtualRow.index)}
+            {renderBranchMore(virtualRow.index)}
           </div>
         ))
       )}
@@ -1424,8 +1660,9 @@ export function MobileGridList({
             }
           >
             {mobileShowMoreValue}
+            {/* What is left to reveal, not what one press reveals. */}
             <span className="ml-1 tabular-nums opacity-70">
-              ({Math.min(showMoreStep, pageRows.length - revealed)})
+              ({pageRows.length - revealed})
             </span>
           </Button>
         ) : null}

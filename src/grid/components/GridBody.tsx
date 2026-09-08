@@ -27,6 +27,7 @@ import type {
 import { cn } from "../../lib/utils";
 import { buildEditCellProps } from "../utils/editing";
 import { resolveEmptyText } from "../utils/emptyText";
+import { t } from "../../utils/helpers";
 import { resolveConfiguredRowHeight } from "../utils/rowHeight";
 import type {
   TypeGridColumnRenderItem,
@@ -224,6 +225,8 @@ function CellEditorSurfaceSync(props: {
 export type GridBodyProps = {
   tree: TreeGridController;
   treeColumn?: string;
+  treeNestingSize?: number;
+  treeBranchPageSize: number;
   masterDetail: UseMasterDetailResult;
   detailColumnId?: string;
   rowModel: any[];
@@ -353,6 +356,8 @@ export function GridBody(props: GridBodyProps) {
   const {
     tree,
     treeColumn,
+    treeNestingSize,
+    treeBranchPageSize,
     masterDetail,
     detailColumnId,
     rowModel,
@@ -1943,7 +1948,14 @@ export function GridBody(props: GridBodyProps) {
                 onPointerDown={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}
                 className="box-border overflow-auto border-b border-border"
-                style={{ height: detailHeight }}
+                /* Inset to match the padding the mobile layout gives it, since
+                   a panel flush against the row's edges reads as broken rather
+                   than as full bleed. A consumer whose own component already
+                   pads takes the token back down to `0`. */
+                style={{
+                  height: detailHeight,
+                  padding: "var(--tdg-master-detail-padding, 0.75rem 1rem)",
+                }}
               >
                 {masterDetail.renderDetails(row.original, rowIndex)}
               </div>
@@ -1953,11 +1965,47 @@ export function GridBody(props: GridBodyProps) {
       </TableRow>
     ) : null;
 
+    /*
+     * Emitted as a row after the last child of a capped branch, the way a
+     * detail panel already rides after its own row, so the table needs no
+     * second kind of item in its row model.
+     */
+    const branchTruncation = tree.enabled
+      ? tree.branchTruncations.find(
+          (truncation) => truncation.afterRowId === row.id
+        )
+      : undefined;
+    const branchMoreRow = branchTruncation ? (
+      <TableRow data-slot="tree-branch-more" data-row-id={row.id}>
+        <TableCell colSpan={renderedTableColumnCount} className="!py-1">
+          <button
+            type="button"
+            data-slot="tree-branch-more-button"
+            className="inline-flex h-8 items-center rounded-sm px-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{
+              marginInlineStart:
+                branchTruncation.depth * Math.max(0, treeNestingSize ?? 22),
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              tree.revealBranch(branchTruncation.branchKey, treeBranchPageSize);
+            }}
+          >
+            {t(i18n, "mobileShowMore", "Show more")}
+            <span className="ml-1 tabular-nums opacity-70">
+              ({branchTruncation.hidden})
+            </span>
+          </button>
+        </TableCell>
+      </TableRow>
+    ) : null;
+
     if (renderRow) {
       return (
         <React.Fragment key={row.id}>
           {renderRow(renderedRowProps)}
           {detailPanel}
+          {branchMoreRow}
         </React.Fragment>
       );
     }
@@ -1969,6 +2017,7 @@ export function GridBody(props: GridBodyProps) {
       <React.Fragment key={row.id}>
         <TableRow {...nativeRowProps}>{children}</TableRow>
         {detailPanel}
+        {branchMoreRow}
       </React.Fragment>
     );
   }

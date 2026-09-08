@@ -1624,10 +1624,20 @@ export type TypeMobileTransformProps = {
    */
   scroll?: TypeMobileTransformScroll;
 
-  /** Controlled row presentation. Pair with `onVariantChange` to drive it. */
+  /**
+   * Controlled row presentation. Pair with `onVariantChange` to drive it.
+   *
+   * A tree grid (`treeEnabled`) is always `"list"` and ignores this. A card
+   * draws its own box, and a box cannot carry indentation: the border reads as
+   * the unit, so a nested node looks like a misaligned card rather than a
+   * child. The variant toggle is hidden there for the same reason.
+   */
   variant?: TypeMobileTransformVariant;
 
-  /** Initial row presentation when `variant` is uncontrolled. Defaults to `"list"`. */
+  /**
+   * Initial row presentation when `variant` is uncontrolled. Defaults to
+   * `"list"`, and is fixed to it on a tree grid.
+   */
   defaultVariant?: TypeMobileTransformVariant;
 
   /**
@@ -1679,8 +1689,9 @@ export type TypeMobileTransformProps = {
    * `card*` options. `"click"` makes the whole row a target as well as the
    * chevron, `"chevron"` the affordance alone, and `"none"` turns it off.
    *
-   * Defaults to `"click"` for a grid that passes this configuration object,
-   * and to `"none"` for one that only sets `allowMobileTransform`.
+   * Defaults to `"click"` for a grid that passes this configuration object or
+   * enables the tree, and to `"none"` for one that only sets
+   * `allowMobileTransform`.
    *
    * The row's own `onRowClick` still fires under `"click"`, and a tap that
    * lands on a control inside the row - an action cell, a checkbox, a link -
@@ -1694,6 +1705,10 @@ export type TypeMobileTransformProps = {
    * takes the keyboard and screen-reader route to the panel with it: the row
    * still reports its state through `aria-expanded`, but only a pointer can
    * open it.
+   *
+   * Defaults to `false` on a tree grid, where the row already carries a
+   * chevron for its branch and a second one beside it would be ambiguous. The
+   * row's own tap opens the fields there instead.
    */
   showRowExpandToggle?: boolean;
 
@@ -1756,6 +1771,11 @@ export type TypeMobileTransformProps = {
   /**
    * Search box in the mobile toolbar. Defaults to `true`, and to `false` for a
    * grid whose search box is mounted outside it or which renders a tree.
+   */
+  /**
+   * On a tree grid the box searches the whole tree rather than the rows already
+   * on screen, and reveals the ancestors of a match the way the filter row
+   * does, so a record inside a collapsed branch is still found.
    */
   showSearch?: boolean;
 
@@ -1835,6 +1855,13 @@ export type TypeMobileTransformProps = {
    * page, so only its own pager can reach the rest: the layout renders that
    * pager, driven by the grid's `skip`/`limit` and its authoritative `count`,
    * and `pageSize`/`pageSizes` give way to the grid's `limit`/`pageSizes`.
+   *
+   * On a tree grid `"pagination"` and `"both"` resolve to `"show-more"`: a
+   * numbered page over a tree cuts mid-branch, and the boundary moves as the
+   * viewer expands. A tree also caps each set of siblings at `pageSize`
+   * whatever this says, with its own control at that branch's indent, because
+   * a branch's length is chosen by the viewer rather than given by the data
+   * and nothing else bounds a node with thousands of children once it is open.
    */
   overflow?: TypeMobileTransformOverflow;
 

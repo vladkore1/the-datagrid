@@ -145,6 +145,11 @@ import { useTreeGrid } from "./hierarchy/useTreeGrid";
 import { useTreeRowAdapter } from "./hierarchy/treeRowAdapter";
 import { countTreeRecords, type TreeRecord } from "./hierarchy/treeData";
 import {
+  filterRecordsByDataGridSearch,
+  normalizeDataGridSearchText,
+  resolveSearchedColumns,
+} from "./utils/search";
+import {
   isMasterDetailEnabled,
   useMasterDetail,
 } from "./hierarchy/useMasterDetail";
@@ -431,8 +436,14 @@ function ReactDataGrid(props: TypeDataGridProps) {
         allowMobileTransform,
         mobileTransform: props.mobileTransform,
         gridPaginationEnabled: (props.pagination ?? false) !== false,
+        treeEnabled: props.treeEnabled === true,
       }),
-    [allowMobileTransform, props.mobileTransform, props.pagination]
+    [
+      allowMobileTransform,
+      props.mobileTransform,
+      props.pagination,
+      props.treeEnabled,
+    ]
   );
   const isMobileViewport = useMediaQuery(mobileTransformConfig.mediaQuery);
   const emitSearchColumnIdsChange =
@@ -1105,12 +1116,53 @@ function ReactDataGrid(props: TypeDataGridProps) {
     ReadonlySet<TreeRecord>
   >(() => new Set());
   const [count, setCount] = React.useState<number>(0);
+  /*
+   * The mobile toolbar's search box only ever saw the rows the tree had already
+   * flattened, so a match inside a collapsed branch did not exist to find. The
+   * query is held here and handed to the loader instead, which searches every
+   * sibling group and reveals the ancestors of a match, exactly as the filter
+   * row does. Held at this level because the mobile layout unmounts the moment
+   * the viewport widens.
+   */
+  const [mobileSearchQuery, setMobileSearchQuery] = React.useState("");
+  const treeSearchRows = React.useMemo(() => {
+    if (props.treeEnabled !== true) return undefined;
+    if (normalizeDataGridSearchText(mobileSearchQuery).length === 0)
+      return undefined;
+    const searched = resolveSearchedColumns(inputColumns, {
+      searchColumnIds,
+      checkboxColumnId: checkboxColId,
+    });
+    return (records: TreeRecord[]) =>
+      filterRecordsByDataGridSearch(records, searched, mobileSearchQuery);
+  }, [
+    checkboxColId,
+    inputColumns,
+    mobileSearchQuery,
+    searchColumnIds,
+    props.treeEnabled,
+  ]);
+
+  /*
+   * `treeBranchPageSize` is opt-in, because a table has always shown every
+   * child a branch has. The mobile layout is the exception: it falls back to
+   * its own page size, which is the cap it already applied, so a phone stays
+   * bounded whether or not a consumer sets the prop.
+   */
+  const treeBranchPageSize =
+    props.treeBranchPageSize ??
+    (mobileTransformActive
+      ? mobileTransformConfig.pageSize
+      : Number.POSITIVE_INFINITY);
+
   const tree = useTreeGrid({
     props,
+    branchPageSize: treeBranchPageSize,
     sourceRows,
     idProperty,
     revealMatches:
-      (activeLocalFilter || searchActive) && typeof dataSource !== "function",
+      (activeLocalFilter || searchActive || treeSearchRows != null) &&
+      typeof dataSource !== "function",
     revealNodes: treeRevealNodes,
   });
   const rows: typeof sourceRows = tree.rows;
@@ -1164,6 +1216,7 @@ function ReactDataGrid(props: TypeDataGridProps) {
     reload,
   } = useGridDataLoader({
     treeEnabled: tree.enabled,
+    treeSearchRows,
     nodesProperty: props.nodesProperty ?? "nodes",
     detailColumnId: showDetailColumn ? detailColumnId : undefined,
     setTreeRevealNodes,
@@ -3595,6 +3648,8 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 showSettings={mobileTransformConfig.showSettings}
                 settingsSurface={mobileTransformConfig.settingsSurface}
                 searchColumnIds={searchColumnIds}
+                onQueryChange={setMobileSearchQuery}
+                searchHandledUpstream={treeSearchRows != null}
                 onSearchColumnIdsChange={setSearchColumnIds}
                 resultCountEnabled={mobileTransformConfig.showResultCount}
                 stickyOffset={mobileTransformConfig.stickyOffset}
@@ -3835,6 +3890,8 @@ function ReactDataGrid(props: TypeDataGridProps) {
                   </colgroup>
                   <GridBody
                     tree={tree}
+                    treeNestingSize={props.treeNestingSize}
+                    treeBranchPageSize={treeBranchPageSize}
                     treeColumn={(() => {
                       const column =
                         (props.treeColumn

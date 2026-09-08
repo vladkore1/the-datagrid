@@ -7,6 +7,24 @@ import type {
   TypeNodeEvent,
 } from "./treeTypes";
 import { indexTree, type TreeEntry, type TreeRecord } from "./treeData";
+import { cn } from "../../lib/utils";
+
+/** Lets the mobile layout size the toggle for a phone without forking it. */
+export type TreeToggleOptions = {
+  nestingSize?: number | string;
+  buttonClassName?: string;
+};
+
+export const TREE_ROOT_BRANCH_KEY = " root";
+
+/** A branch that has more children than it is currently showing. */
+export type TreeBranchTruncation = {
+  branchKey: string;
+  /** Id of the last child on screen, which the control follows. */
+  afterRowId: string;
+  depth: number;
+  hidden: number;
+};
 
 export function useTreeGrid({
   props,
@@ -14,12 +32,15 @@ export function useTreeGrid({
   idProperty,
   revealMatches,
   revealNodes,
+  branchPageSize,
 }: {
   props: TypeTreeGridProps;
   sourceRows: TreeRecord[];
   idProperty: string;
   revealMatches: boolean;
   revealNodes: ReadonlySet<TreeRecord>;
+  /** `Infinity` shows every child, which is the table's own default. */
+  branchPageSize: number;
 }) {
   const enabled = props.treeEnabled === true;
   const nodesProperty = props.nodesProperty ?? "nodes";
@@ -30,6 +51,18 @@ export function useTreeGrid({
       ...props.defaultExpandedNodes,
     }));
   const expanded = props.expandedNodes ?? internalExpanded;
+  const [revealedByBranch, setRevealedByBranch] = React.useState<
+    Record<string, number>
+  >({});
+  // A branch that is closed and reopened starts from the first batch again.
+  const revealBranch = React.useCallback(
+    (branchKey: string, step: number) =>
+      setRevealedByBranch((current) => ({
+        ...current,
+        [branchKey]: (current[branchKey] ?? 0) + Math.max(1, step),
+      })),
+    []
+  );
   const tree = React.useMemo(
     () =>
       enabled
@@ -103,15 +136,34 @@ export function useTreeGrid({
     );
   };
   const visibleEntries: TreeEntry[] = [];
-  const visit = (entries: TreeEntry[]) => {
-    for (const entry of entries) {
+  const branchTruncations: TreeBranchTruncation[] = [];
+  /*
+   * The cap is counted per sibling group rather than over the flat run, so a
+   * branch's length is its own business and revealing more of one never
+   * displaces the branches after it.
+   */
+  const visit = (entries: TreeEntry[], branchKey: string) => {
+    const limit = Math.max(
+      1,
+      branchPageSize + (revealedByBranch[branchKey] ?? 0)
+    );
+    entries.forEach((entry, childIndex) => {
+      if (childIndex >= limit) return;
       const index = visibleEntries.length;
       visibleEntries.push(entry);
       if (getNodeProps(entry).expanded && canExpand(entry, index))
-        visit(entry.children);
+        visit(entry.children, entry.id);
+    });
+    if (entries.length > limit) {
+      branchTruncations.push({
+        branchKey,
+        afterRowId: entries[limit - 1]!.id,
+        depth: entries[0]!.depth,
+        hidden: entries.length - limit,
+      });
     }
   };
-  if (enabled) visit(tree.roots);
+  if (enabled) visit(tree.roots, TREE_ROOT_BRANCH_KEY);
   // Preserve row identities across unrelated state changes, particularly the
   // loader's callbacks: a new flat array on every render would retrigger loads.
   const visibleKey = JSON.stringify(visibleEntries.map((entry) => entry.id));
@@ -162,7 +214,11 @@ export function useTreeGrid({
     if (props.expandedNodes === undefined) setInternalExpanded(next);
     props.onExpandedNodesChange?.(change);
   };
-  const renderToggle = (data: TreeRecord, index: number) => {
+  const renderToggle = (
+    data: TreeRecord,
+    index: number,
+    options?: TreeToggleOptions
+  ) => {
     const entry = byData.get(data);
     if (!entry) return null;
     const nodeProps = getNodeProps(entry);
@@ -171,12 +227,15 @@ export function useTreeGrid({
     const customTool = nodeProps.expanded
       ? props.renderTreeCollapseTool
       : props.renderTreeExpandTool;
+    const nesting = options?.nestingSize ?? props.treeNestingSize ?? 22;
     return (
       <span
         className="inline-flex shrink-0 items-center"
         style={{
           paddingInlineStart:
-            entry.depth * Math.max(0, props.treeNestingSize ?? 22),
+            typeof nesting === "number"
+              ? entry.depth * Math.max(0, nesting)
+              : `calc(${nesting} * ${entry.depth})`,
         }}
       >
         {expandable ? (
@@ -191,7 +250,10 @@ export function useTreeGrid({
                 ? "Matching descendants are shown while filtering"
                 : undefined
             }
-            className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              "inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              options?.buttonClassName
+            )}
             onPointerDown={(event) => event.stopPropagation()}
             onDoubleClick={(event) => event.stopPropagation()}
             onClick={(event) => {
@@ -215,7 +277,10 @@ export function useTreeGrid({
             )}
           </button>
         ) : (
-          <span className="inline-block size-7" aria-hidden="true" />
+          <span
+            className={cn("inline-block size-7", options?.buttonClassName)}
+            aria-hidden="true"
+          />
         )}
       </span>
     );
@@ -223,6 +288,8 @@ export function useTreeGrid({
   return {
     enabled,
     rows,
+    branchTruncations,
+    revealBranch,
     getId,
     getMetadata,
     renderToggle,

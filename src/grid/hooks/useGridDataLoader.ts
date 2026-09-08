@@ -26,6 +26,19 @@ import { createLoadingStore } from "../utils/loadingStore";
 import type { InternalSearchController } from "../internalProps";
 
 /**
+ * Both searches narrow the same sibling group, so a grid carrying an external
+ * search box and a mobile search box applies both rather than the last one.
+ */
+function composeTreeSearch(
+  controller: ((rows: TreeRecord[]) => TreeRecord[]) | undefined,
+  layout: ((rows: TreeRecord[]) => TreeRecord[]) | undefined
+) {
+  if (!controller) return layout;
+  if (!layout) return controller;
+  return (rows: TreeRecord[]) => layout(controller(rows));
+}
+
+/**
  * Returns the previous array when the next one holds the same rows in the same
  * order, so a load that recomputed an identical result does not hand React a
  * fresh identity.
@@ -87,6 +100,8 @@ export type UseGridDataLoaderParams = {
   searchActive: boolean;
   searchConnected: boolean;
   searchFilterRows: InternalSearchController["filterRows"] | undefined;
+  /** A search owned by the layout, e.g. the mobile toolbar's box. */
+  treeSearchRows: ((rows: TreeRecord[]) => TreeRecord[]) | undefined;
   searchValue: string;
   setCount: React.Dispatch<React.SetStateAction<number>>;
   setFilterValue: (next: TypeFilterValue) => void;
@@ -138,6 +153,7 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
     searchActive,
     searchConnected,
     searchFilterRows,
+    treeSearchRows,
     searchValue,
     setCount,
     setFilterValue,
@@ -231,10 +247,12 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
               columns: orderedColumns,
               sortInfo: localSortInfo,
               sortFunctions,
-              search:
+              search: composeTreeSearch(
                 searchActive && searchFilterRows
                   ? (rows) => searchFilterRows(rows, inputColumns)
                   : undefined,
+                treeSearchRows
+              ),
             });
             const nextRows = localPagination
               ? result.data.slice(loadSkip, loadSkip + limit)
@@ -348,10 +366,12 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
               columns: orderedColumns,
               sortInfo: localSortInfo,
               sortFunctions,
-              search:
+              search: composeTreeSearch(
                 searchActive && searchFilterRows
                   ? (rows) => searchFilterRows(rows, inputColumns)
                   : undefined,
+                treeSearchRows
+              ),
             });
             setTreeRevealNodes(result.revealNodes);
             return result.data as Row[];
@@ -443,6 +463,7 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
     },
     [
       treeEnabled,
+      treeSearchRows,
       nodesProperty,
       setTreeRevealNodes,
       dataSource,
