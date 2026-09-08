@@ -1,7 +1,31 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { parseDataGridSearchQuery } from "../../src/grid/utils/search";
 import { viteFsUrl } from "./helpers/vite-fs-url";
+
+/*
+ * The mobile toolbar gathers the sort, search-scope and column controls behind
+ * a single Settings button, so a test that drives any of them opens the drawer
+ * first rather than looking for them on the toolbar itself.
+ */
+async function openMobileSettings(page: Page) {
+  await page.getByRole("button", { name: "Settings" }).first().click();
+  await expect(page.locator(".tdg-mobile-settings-drawer")).toBeVisible();
+}
+
+async function closeMobileSettings(page: Page) {
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".tdg-mobile-settings-drawer")).toHaveCount(0);
+}
+
+async function chooseMobileVariant(
+  page: Page,
+  name: "List view" | "Card view"
+) {
+  await openMobileSettings(page);
+  await page.getByRole("button", { name, exact: true }).click();
+  await closeMobileSettings(page);
+}
 
 test.describe("allowMobileTransform", () => {
   test("recognizes punctuation-rich column headers and column keys", () => {
@@ -484,39 +508,35 @@ test.describe("allowMobileTransform", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/examples/mobile-transform");
 
-    const sortButton = page.getByRole("button", { name: "Sort" });
-    const columnsButton = page.getByRole("button", {
-      name: "Display columns",
-    });
-
-    for (const button of [sortButton, columnsButton]) {
-      await expect(button).toBeVisible();
-      await expect(button).toHaveText("");
-      await expect(button.locator("svg")).toHaveCount(1);
-      const box = await button.boundingBox();
-      expect(Math.round(box?.width ?? 0)).toBe(40);
-      expect(Math.round(box?.height ?? 0)).toBe(40);
-    }
+    const settingsButton = page.getByRole("button", { name: "Settings" });
+    await expect(settingsButton).toBeVisible();
+    await expect(settingsButton).toHaveText("");
+    await expect(settingsButton.locator("svg")).toHaveCount(1);
+    const box = await settingsButton.boundingBox();
+    expect(Math.round(box?.width ?? 0)).toBe(40);
+    expect(Math.round(box?.height ?? 0)).toBe(40);
+    // One action on the toolbar, with the rest behind it.
+    await expect(
+      page.locator('[data-slot="mobile-toolbar"] button')
+    ).toHaveCount(1);
 
     // The card fields are the subject here, and the layout now starts in the list.
-    await page.getByRole("button", { name: "Card view" }).click();
+    await chooseMobileVariant(page, "Card view");
     const firstCard = page.locator('article[data-row-id="AC-00001"]');
     await expect(firstCard.getByText("Owner", { exact: true })).toBeVisible();
 
-    await columnsButton.click();
-    const columnsMenu = page.getByRole("menu");
-    await expect(columnsMenu.getByText("Display columns")).toBeVisible();
+    await openMobileSettings(page);
+    await page.getByRole("button", { name: /Display columns/ }).click();
 
-    const notesItem = columnsMenu.getByRole("menuitemcheckbox", {
-      name: "Owner",
-    });
-    await expect(notesItem).toHaveAttribute("aria-checked", "true");
-    await notesItem.click();
-    await expect(notesItem).toHaveAttribute("aria-checked", "false");
+    const ownerToggle = page.getByRole("checkbox", { name: "Owner" });
+    await expect(ownerToggle).toHaveAttribute("aria-checked", "true");
+    await ownerToggle.click();
+    await expect(ownerToggle).toHaveAttribute("aria-checked", "false");
     await expect(firstCard.getByText("Owner", { exact: true })).toHaveCount(0);
 
-    await notesItem.click();
-    await expect(notesItem).toHaveAttribute("aria-checked", "true");
+    await ownerToggle.click();
+    await expect(ownerToggle).toHaveAttribute("aria-checked", "true");
+    await closeMobileSettings(page);
     await expect(firstCard.getByText("Owner", { exact: true })).toBeVisible();
   });
 
@@ -528,7 +548,7 @@ test.describe("allowMobileTransform", () => {
       "mobile-list"
     );
     // The two-column field grid is a card, and the layout now starts in the list.
-    await page.getByRole("button", { name: "Card view" }).click();
+    await chooseMobileVariant(page, "Card view");
     const columns = await page
       .locator(".tdg-mobile dl")
       .first()
@@ -596,8 +616,9 @@ test.describe("allowMobileTransform", () => {
     await expect(grid).toHaveAttribute("data-focused", "true");
     await expect(grid).toHaveAttribute("data-active-index", "none");
 
-    await page.getByRole("button", { name: "Sort" }).click();
-    await expect(page.locator('[data-slot="mobile-sort-panel"]')).toBeVisible();
+    await openMobileSettings(page);
+    await expect(grid).toHaveAttribute("data-active-index", "none");
+    await closeMobileSettings(page);
     await expect(grid).toHaveAttribute("data-active-index", "none");
 
     // Entry into the grid itself is what activateRowOnFocus serves.
@@ -784,11 +805,9 @@ test.describe("allowMobileTransform", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/examples/mobile-transform");
 
-    await page.getByRole("button", { name: "Sort" }).click();
-    const sortPanel = page.locator('[data-slot="mobile-sort-panel"]');
-    await expect(sortPanel).toBeVisible();
+    await openMobileSettings(page);
     await expect(page.getByRole("combobox", { name: "Sort by" })).toContainText(
-      "Account"
+      "Choose a column"
     );
     await expect(
       page.getByRole("button", { name: "Ascending" })
@@ -799,17 +818,16 @@ test.describe("allowMobileTransform", () => {
     await page.getByRole("button", { name: "Descending" }).click();
     await page.getByRole("button", { name: "Apply sort" }).click();
 
+    // The drawer names the sort it is holding, then hands the rows back sorted.
+    await expect(page.locator(".tdg-mobile-settings-drawer")).toContainText(
+      "Account ID"
+    );
+    await closeMobileSettings(page);
     await expect(page.locator('article[data-row-id="AC-10000"]')).toBeVisible();
-    await expect(
-      page.getByRole("button", {
-        name: "Sort: Account ID descending",
-      })
-    ).toBeVisible();
 
-    await page
-      .getByRole("button", { name: "Sort: Account ID descending" })
-      .click();
+    await openMobileSettings(page);
     await page.getByRole("button", { name: "Clear sort" }).click();
+    await closeMobileSettings(page);
     await expect(page.locator('article[data-row-id="AC-00001"]')).toBeVisible();
   });
 });
