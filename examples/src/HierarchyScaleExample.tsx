@@ -111,12 +111,13 @@ function buildOrgs(bigBranchSize: number) {
 }
 
 /*
- * The page mounts the whole tree, so the default is the smallest of these: at
- * 2,000 the grid took 3.0s to appear against 0.7s for the other examples, which
- * under a parallel test run was enough to exhaust a 30s wait. The larger sizes
- * stay a click away for measuring scale by hand.
+ * The page mounts every grid on it, so the default is the smallest size that
+ * still shows the behaviour: 120 children against a cap of 25 leaves plenty
+ * hidden. Scale is a click away, and worth a click rather than a cost every
+ * test pays, since a 2,000-child default took 3.0s to appear against 0.7s for
+ * the other examples.
  */
-const BRANCH_SIZES = [500, 2000, 5000] as const;
+const BRANCH_SIZES = [120, 500, 2000, 5000] as const;
 
 /*
  * `orgid` filters as a string so the operator can be `contains`, which is what
@@ -174,7 +175,7 @@ export default function HierarchyScaleExample() {
   const { gridTheme, i18n } = useExamplesUi();
   const gridThemeBase = resolveThemeBase(gridTheme);
   const [branchSize, setBranchSize] =
-    React.useState<(typeof BRANCH_SIZES)[number]>(500);
+    React.useState<(typeof BRANCH_SIZES)[number]>(120);
   const [pageSize, setPageSize] = React.useState(25);
   const [scroll, setScroll] = React.useState<"container" | "page">("page");
   const [insetBackground, setInsetBackground] = React.useState(true);
@@ -186,7 +187,9 @@ export default function HierarchyScaleExample() {
     () => buildOrgs(branchSize),
     [branchSize]
   );
-  const briefRecords = React.useMemo(() => rows.slice(0, 400), [rows]);
+  // Two more grids sit below the tree, and every test on this page mounts
+  // them, so they carry only enough rows to page and to open a brief.
+  const briefRecords = React.useMemo(() => rows.slice(0, 60), [rows]);
 
   const mobileTransform: TypeMobileTransformProps = {
     scroll,

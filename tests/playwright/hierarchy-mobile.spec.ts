@@ -203,9 +203,21 @@ test("caps a branch on the table too, once the prop asks for it", async ({
 
   const control = grid.locator('[data-slot="tree-branch-more-button"]').first();
   await expect(control).toBeVisible();
-  const label = (await control.innerText()).replace(/\s+/g, " ");
-  // The count is what is left in the branch, not what one press reveals.
-  expect(label).toMatch(/Show more \(\d{3,}\)/);
+  /*
+   * The count is what is left in the branch rather than what one press
+   * reveals, so pressing it takes the number down by a page.
+   */
+  const remaining = async () =>
+    Number(
+      /\((\d+)\)/.exec(
+        await grid
+          .locator('[data-slot="tree-branch-more-button"]')
+          .first()
+          .innerText()
+      )?.[1]
+    );
+  const before = await remaining();
+  expect(before).toBeGreaterThan(0);
 
   // The control belongs to the run of rows, so it carries their cursor rather
   // than the arrow a browser gives a button.
@@ -218,6 +230,7 @@ test("caps a branch on the table too, once the prop asks for it", async ({
   await expect
     .poll(async () => await grid.locator('[data-slot="grid-row"]').count())
     .toBeGreaterThan(rowsBefore);
+  await expect.poll(remaining).toBeLessThan(before);
 });
 
 test("marks a row that opens on tap and lets a token give it a pointer", async ({
