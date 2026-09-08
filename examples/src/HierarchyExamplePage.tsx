@@ -240,18 +240,23 @@ const taskColumns: TypeColumns = [
  * The rows scroll with the page on a phone and the grid keeps its fixed height
  * on desktop, which is what the wrappers below switch at `lg`.
  *
- * Everything after `scroll` is pinned to the value it already had: the mere
+ * Two summary fields keeps a tree row to one line under its title at 390px;
+ * three wrap. `cardFields` covers an open row as well as a card, and inline
+ * labels read as a table there, which is what a tree is.
+ *
+ * Everything after `cardFields` is pinned to the value it already had: the mere
  * presence of a `mobileTransform` object moves `defaultVariant`, `listExpand`,
- * `cardFields`, `showVariantToggle`, `showSettings` and `overflow` onto their
- * newer defaults, and `scroll: "page"` takes `chrome` to `plain` with it, which
- * is what drops a card's side padding. Only the scroll mode is meant to change.
+ * `showVariantToggle`, `showSettings` and `overflow` onto their newer defaults,
+ * and `scroll: "page"` takes `chrome` to `plain` with it, which is what drops a
+ * card's side padding.
  */
 const mobileTransform: TypeMobileTransformProps = {
   scroll: "page",
+  listFieldLimit: 2,
+  cardFields: "inline",
   chrome: "card",
   defaultVariant: "cards",
   listExpand: "click",
-  cardFields: "stacked",
   showVariantToggle: false,
   showSettings: false,
   overflow: "none",

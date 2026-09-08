@@ -194,6 +194,8 @@ export default function HierarchyScaleExample() {
   const mobileTransform: TypeMobileTransformProps = {
     scroll,
     listRows,
+    listFieldLimit: 2,
+    cardFields: "inline",
     pageSize,
     showMoreStep: pageSize,
     breakpoint: 1024,
