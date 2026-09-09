@@ -1140,6 +1140,17 @@ function ReactDataGrid(props: TypeDataGridProps) {
     props.treeEnabled,
   ]);
 
+  /*
+   * The loader applies this only where it composes rows itself. A function
+   * source, and any authoritative remote page, comes back untouched, so
+   * claiming the search is handled would leave every row on screen.
+   */
+  const treeSearchApplied =
+    treeSearchRows != null &&
+    (Array.isArray(dataSource) ||
+      (typeof dataSource !== "function" &&
+        (paginationMode === false || paginationMode === "local")));
+
   // Opt-in on the table, which has always shown every child. A phone stays
   // bounded either way by falling back to its own page size.
   const treeBranchPageSize =
@@ -3642,7 +3653,7 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 settingsSurface={mobileTransformConfig.settingsSurface}
                 searchColumnIds={searchColumnIds}
                 onQueryChange={setMobileSearchQuery}
-                searchHandledUpstream={treeSearchRows != null}
+                searchHandledUpstream={treeSearchApplied}
                 onSearchColumnIdsChange={setSearchColumnIds}
                 resultCountEnabled={mobileTransformConfig.showResultCount}
                 stickyOffset={mobileTransformConfig.stickyOffset}
