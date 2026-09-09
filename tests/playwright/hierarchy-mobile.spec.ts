@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { viteFsUrl } from "./helpers/vite-fs-url";
 
 /*
  * The mobile tree: what the layout owes a tree grid that the table does not.
@@ -302,4 +303,101 @@ test("lets a token give a table row and its chevron a pointer too", async ({
   expect(await chevron.evaluate((node) => getComputedStyle(node).cursor)).toBe(
     "pointer"
   );
+});
+
+const retainedCount = async (page: Page) =>
+  /([\d,]+)\s+results?/.exec(await treeGrid(page).innerText())?.[1] ?? null;
+
+test("keeps the count on retained records when a branch opens", async ({
+  page,
+}) => {
+  await openScalePage(page, 390);
+
+  const before = await retainedCount(page);
+  expect(Number(before?.replace(/,/g, ""))).toBeGreaterThan(10);
+  const rowsBefore = await treeGrid(page).locator(".tdg-mobile-row").count();
+
+  await treeGrid(page).locator('[data-slot="tree-toggle"]').first().click();
+  await expect
+    .poll(async () => treeGrid(page).locator(".tdg-mobile-row").count())
+    .toBeGreaterThan(rowsBefore);
+
+  // Opening a branch is not filtering, so the records the tree holds are
+  // unchanged even though the list is now showing more of them.
+  expect(await retainedCount(page)).toBe(before);
+});
+
+test("opens a row's fields from the keyboard, not only from a tap", async ({
+  page,
+}) => {
+  await openScalePage(page, 390);
+
+  // A tree renders no expand toggle, so the row's title is the control.
+  const title = treeGrid(page)
+    .locator('.tdg-mobile-row button[data-cell-role="primary"]')
+    .first();
+  await expect(title).toHaveAttribute("aria-expanded", "false");
+
+  await title.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(title).toHaveAttribute("aria-expanded", "true");
+  const panelId = await title.getAttribute("aria-controls");
+  await expect(treeGrid(page).locator(`[id="${panelId}"]`)).toBeVisible();
+});
+
+test("searches a function-backed tree, closed branches included", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/examples/hierarchy");
+  await expect(page.getByTestId("hierarchy-showcase")).toBeVisible();
+  await page.evaluate(() => {
+    document.getElementById("root")!.style.display = "none";
+    const host = document.createElement("div");
+    host.id = "fn-tree-root";
+    host.style.cssText =
+      "position:fixed;inset:8px;background:white;z-index:1000";
+    document.body.append(host);
+  });
+  await page.addScriptTag({
+    type: "module",
+    content: `
+      import React from ${JSON.stringify(viteFsUrl("node_modules/.vite/deps/react.js"))};
+      import ReactDOMClient from ${JSON.stringify(viteFsUrl("node_modules/.vite/deps/react-dom_client.js"))};
+      import ReactDataGrid from ${JSON.stringify(viteFsUrl("src/ReactDataGrid.tsx"))};
+      const tree = [
+        { id: "r1", name: "Root One", nodes: [
+          { id: "c1", name: "Alpha Child" },
+          { id: "c2", name: "Zephyr Child" },
+        ] },
+        { id: "r2", name: "Root Two", nodes: [{ id: "c3", name: "Beta Child" }] },
+      ];
+      ReactDOMClient.createRoot(document.getElementById("fn-tree-root")).render(
+        React.createElement(ReactDataGrid, {
+          theme: "default", idProperty: "id", rowHeight: 40,
+          style: { height: 700, width: "100%" },
+          columns: [{ name: "name", header: "Name" }],
+          treeEnabled: true,
+          dataSource: () => Promise.resolve(tree),
+          allowMobileTransform: true,
+          mobileTransform: { showSearch: true, showResultCount: true },
+        })
+      );
+    `,
+  });
+
+  const host = page.locator("#fn-tree-root");
+  const names = () =>
+    host
+      .locator('.tdg-mobile-row [data-cell-role="primary"]')
+      .allTextContents();
+  await expect(host.locator(".tdg-mobile-row").first()).toBeVisible();
+  expect(await names()).toEqual(["Root One", "Root Two"]);
+
+  await host.getByRole("searchbox").fill("Zephyr");
+
+  // The match is a child of a branch nobody opened. Searching only the rows
+  // already rendered would find nothing at all.
+  await expect.poll(names).toEqual(["Root One", "Zephyr Child"]);
 });
