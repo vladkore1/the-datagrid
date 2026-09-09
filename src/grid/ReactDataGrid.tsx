@@ -141,7 +141,10 @@ import { useGridScrollApi } from "./hooks/useGridScrollApi";
 import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridToolbarBridge } from "./hooks/useGridToolbarBridge";
 import { useGridVirtualListApi } from "./hooks/useGridVirtualListApi";
-import { useTreeGrid } from "./hierarchy/useTreeGrid";
+import {
+  TREE_BRANCH_MORE_ROW_HEIGHT,
+  useTreeGrid,
+} from "./hierarchy/useTreeGrid";
 import { useTreeRowAdapter } from "./hierarchy/treeRowAdapter";
 import { countTreeRecords, type TreeRecord } from "./hierarchy/treeData";
 import {
@@ -1158,6 +1161,9 @@ function ReactDataGrid(props: TypeDataGridProps) {
     (mobileTransformActive
       ? mobileTransformConfig.pageSize
       : Number.POSITIVE_INFINITY);
+
+  const treeCapsBranches =
+    props.treeEnabled === true && Number.isFinite(treeBranchPageSize);
 
   const tree = useTreeGrid({
     props,
@@ -2192,45 +2198,61 @@ function ReactDataGrid(props: TypeDataGridProps) {
   );
   const initialRowHeight = resolveRowHeight(0);
   const getDetailHeight = masterDetail.getDetailHeight;
+  const branchControlRowIds = React.useMemo(
+    () => new Set(tree.branchTruncations.map((item) => item.afterRowId)),
+    // A fresh array every render, so compare the ids it carries.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(tree.branchTruncations.map((item) => item.afterRowId))]
+  );
   const resolveVirtualRowHeight = React.useCallback(
     (index: number) => {
       const baseHeight = resolveRowHeight(index);
       const row = rowModel[index];
       return (
         baseHeight +
-        (row ? getDetailHeight(row.original, index, baseHeight) : 0)
+        (row ? getDetailHeight(row.original, index, baseHeight) : 0) +
+        (row && branchControlRowIds.has(row.id)
+          ? TREE_BRANCH_MORE_ROW_HEIGHT
+          : 0)
       );
     },
-    [resolveRowHeight, rowModel, getDetailHeight]
+    [resolveRowHeight, rowModel, getDetailHeight, branchControlRowIds]
   );
 
   const rowVirtualizer = useVirtualizer({
     count: rowModel.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: resolveVirtualRowHeight,
-    measureElement: masterDetail.enabled
-      ? (element) => {
-          const details = element.nextElementSibling;
-          const height = element.getBoundingClientRect().height;
-          const id = element.getAttribute("data-row-id");
-          if (
-            rowHeight === null &&
-            masterDetail.enabled &&
-            id !== null &&
-            height > 0
-          ) {
-            setNaturalMasterHeights((previous) =>
-              previous[id] === height ? previous : { ...previous, [id]: height }
-            );
+    measureElement:
+      masterDetail.enabled || treeCapsBranches
+        ? (element) => {
+            const height = element.getBoundingClientRect().height;
+            const id = element.getAttribute("data-row-id");
+            if (
+              rowHeight === null &&
+              masterDetail.enabled &&
+              id !== null &&
+              height > 0
+            ) {
+              setNaturalMasterHeights((previous) =>
+                previous[id] === height
+                  ? previous
+                  : { ...previous, [id]: height }
+              );
+            }
+            // A row can be trailed by its detail panel and by a branch
+            // control, in that order, and both belong to its measurement.
+            let total = height;
+            let sibling = element.nextElementSibling;
+            while (sibling) {
+              const slot = sibling.getAttribute("data-slot");
+              if (slot !== "row-details" && slot !== "tree-branch-more") break;
+              total += sibling.getBoundingClientRect().height;
+              sibling = sibling.nextElementSibling;
+            }
+            return total;
           }
-          return (
-            height +
-            (details?.getAttribute("data-slot") === "row-details"
-              ? details.getBoundingClientRect().height
-              : 0)
-          );
-        }
-      : undefined,
+        : undefined,
     // Natural-height rows need the wider measurement buffer for accurate
     // smooth-scroll completion. Deterministically sized rows can use the
     // smaller buffer without reconciling another large set of horizontally

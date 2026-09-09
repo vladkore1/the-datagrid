@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
-import type { TreeGridController } from "../hierarchy/useTreeGrid";
+import {
+  TREE_BRANCH_MORE_ROW_HEIGHT,
+  type TreeGridController,
+} from "../hierarchy/useTreeGrid";
 import type { UseMasterDetailResult } from "../hierarchy/useMasterDetail";
 import type { TreeRecord } from "../hierarchy/treeData";
 // Detail-row span translation is owned by the hierarchy compatibility fixes task.
@@ -1803,7 +1806,21 @@ export function GridBody(props: GridBodyProps) {
     const detailHeight = detailExpanded
       ? masterDetail.getDetailHeight(row.original, rowIndex, baseHeight)
       : 0;
+    /*
+     * Emitted as a row after the last child of a capped branch, the way a
+     * detail panel already rides after its own row, so the table needs no
+     * second kind of item in its row model.
+     */
+    const branchTruncation = tree.enabled
+      ? tree.branchTruncations.find(
+          (truncation) => truncation.afterRowId === row.id
+        )
+      : undefined;
+    // The virtual size covers this row and whatever trails it, so hand the
+    // row back its own height before it is used to size the cells.
     if (detailExpanded) virtualSize = baseHeight;
+    else if (branchTruncation && virtualSize != null)
+      virtualSize = Math.max(0, virtualSize - TREE_BRANCH_MORE_ROW_HEIGHT);
     const nodeProps = tree.enabled ? tree.getMetadata(row.original) : undefined;
     const rowIsSelected = Boolean(selectedMap[row.id]);
     const rowIsActive = rowIndex === activeIndex;
@@ -1965,16 +1982,6 @@ export function GridBody(props: GridBodyProps) {
       </TableRow>
     ) : null;
 
-    /*
-     * Emitted as a row after the last child of a capped branch, the way a
-     * detail panel already rides after its own row, so the table needs no
-     * second kind of item in its row model.
-     */
-    const branchTruncation = tree.enabled
-      ? tree.branchTruncations.find(
-          (truncation) => truncation.afterRowId === row.id
-        )
-      : undefined;
     const branchMoreRow = branchTruncation ? (
       <TableRow
         data-slot="tree-branch-more"
@@ -1988,6 +1995,12 @@ export function GridBody(props: GridBodyProps) {
             showHorizontalCellBorders &&
               "border-b [border-color:var(--tdg-cell-border-color)]"
           )}
+          /* Border-box so the row is exactly the height the virtualizer
+             adds to the owning row's estimate, border included. */
+          style={{
+            boxSizing: "border-box",
+            height: TREE_BRANCH_MORE_ROW_HEIGHT,
+          }}
         >
           <button
             type="button"

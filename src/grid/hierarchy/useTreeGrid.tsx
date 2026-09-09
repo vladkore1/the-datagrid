@@ -17,6 +17,14 @@ export type TreeToggleOptions = {
 
 export const TREE_ROOT_BRANCH_KEY = " root";
 
+/*
+ * Fixed so the desktop virtualizer can add it to the owning row's estimate
+ * without measuring: a table cannot nest the control inside the row it
+ * follows, so it rides as a sibling the way a detail panel does. One data
+ * row tall, its rule included.
+ */
+export const TREE_BRANCH_MORE_ROW_HEIGHT = 41;
+
 /** A branch that has more children than it is currently showing. */
 export type TreeBranchTruncation = {
   branchKey: string;
