@@ -54,7 +54,6 @@ export function useTreeGrid({
   const [revealedByBranch, setRevealedByBranch] = React.useState<
     Record<string, number>
   >({});
-  // A branch that is closed and reopened starts from the first batch again.
   const revealBranch = React.useCallback(
     (branchKey: string, step: number) =>
       setRevealedByBranch((current) => ({
@@ -63,6 +62,18 @@ export function useTreeGrid({
       })),
     []
   );
+  const clearRevealedBranches = React.useCallback((branchKeys: string[]) => {
+    setRevealedByBranch((current) => {
+      const next = { ...current };
+      let changed = false;
+      for (const key of branchKeys) {
+        if (!(key in next)) continue;
+        delete next[key];
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, []);
   const tree = React.useMemo(
     () =>
       enabled
@@ -197,16 +208,21 @@ export function useTreeGrid({
     )
       return;
     const next = { ...expanded, [entry.id]: nodeExpanded };
+    // Reopening starts from the first batch again rather than restoring
+    // however far the branch had been revealed before it closed.
+    const clearedBranches = nodeExpanded ? [] : [entry.id];
     if (!nodeExpanded && (props.collapseChildrenRecursive ?? true)) {
       const collapse = (children: TreeEntry[]) =>
         children.forEach((child) => {
           delete next[child.id];
+          clearedBranches.push(child.id);
           collapse(child.children);
         });
       collapse(entry.children);
     }
     const change = { ...event, nodeExpanded, expandedNodes: next };
     if (props.onNodeExpandChange?.(change) === false) return;
+    if (clearedBranches.length) clearRevealedBranches(clearedBranches);
     if (props.expandedNodes === undefined) setInternalExpanded(next);
     props.onExpandedNodesChange?.(change);
   };
