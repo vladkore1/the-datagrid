@@ -220,10 +220,19 @@ test("caps a branch on the table too, once the prop asks for it", async ({
   expect(before).toBeGreaterThan(0);
 
   // The control belongs to the run of rows, so it carries their cursor rather
-  // than the arrow a browser gives a button.
+  // than the arrow a browser gives a button. Nothing on this page opens on a
+  // click of a table row, so the token is the test's to set.
   expect(await control.evaluate((node) => getComputedStyle(node).cursor)).toBe(
-    "pointer"
+    "auto"
   );
+  expect(
+    await control.evaluate((node) => {
+      node
+        .closest<HTMLElement>(".tdg-root")
+        ?.style.setProperty("--tdg-row-cursor", "pointer");
+      return getComputedStyle(node).cursor;
+    })
+  ).toBe("pointer");
 
   const rowsBefore = await grid.locator('[data-slot="grid-row"]').count();
   await control.click();
@@ -275,10 +284,21 @@ test("lets a token give a table row and its chevron a pointer too", async ({
   await openScalePage(page, 1440, 900);
 
   const row = treeGrid(page).locator('[data-slot="grid-row"]').first();
+  const chevron = treeGrid(page).locator('[data-slot="tree-toggle"]').first();
+  // Clicking a table row here does nothing, so the page leaves the token alone
+  // and the grid ships the browser's own arrow.
+  expect(await row.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "auto"
+  );
+
+  await row.evaluate((node) => {
+    node
+      .closest<HTMLElement>(".tdg-root")
+      ?.style.setProperty("--tdg-row-cursor", "pointer");
+  });
   expect(await row.evaluate((node) => getComputedStyle(node).cursor)).toBe(
     "pointer"
   );
-  const chevron = treeGrid(page).locator('[data-slot="tree-toggle"]').first();
   expect(await chevron.evaluate((node) => getComputedStyle(node).cursor)).toBe(
     "pointer"
   );
