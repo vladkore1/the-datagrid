@@ -1144,15 +1144,15 @@ function ReactDataGrid(props: TypeDataGridProps) {
   ]);
 
   /*
-   * The loader applies this only where it composes rows itself. A function
-   * source, and any authoritative remote page, comes back untouched, so
-   * claiming the search is handled would leave every row on screen.
+   * The loader applies this to whatever it loaded, a function source included.
+   * An authoritative remote page is the exception: only one page is in hand,
+   * so searching it would claim an answer about rows the grid has not seen.
    */
   const treeSearchApplied =
     treeSearchRows != null &&
     (Array.isArray(dataSource) ||
-      (typeof dataSource !== "function" &&
-        (paginationMode === false || paginationMode === "local")));
+      paginationMode === false ||
+      paginationMode === "local");
 
   // Opt-in on the table, which has always shown every child. A phone stays
   // bounded either way by falling back to its own page size.
@@ -1170,9 +1170,12 @@ function ReactDataGrid(props: TypeDataGridProps) {
     branchPageSize: treeBranchPageSize,
     sourceRows,
     idProperty,
+    // A function source owns filtering, so only the search the grid ran itself
+    // reveals a path to a match there.
     revealMatches:
-      (activeLocalFilter || searchActive || treeSearchRows != null) &&
-      typeof dataSource !== "function",
+      ((activeLocalFilter || searchActive) &&
+        typeof dataSource !== "function") ||
+      treeSearchApplied,
     revealNodes: treeRevealNodes,
   });
   const rows: typeof sourceRows = tree.rows;
