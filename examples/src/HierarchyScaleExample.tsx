@@ -362,8 +362,9 @@ export default function HierarchyScaleExample() {
           <code>renderRowDetails</code>. On desktop the panel takes a fixed{" "}
           <code>rowExpandHeight</code> and scrolls whatever does not fit, which
           is the Inovua behaviour; drag the slider down to see it. The mobile
-          list sizes the same panel to its content instead, since a scroll
-          region inside a scrolling page is its own problem.
+          layout sizes the same panel to its content instead, cards and list
+          alike, since a scroll region inside a scrolling page is its own
+          problem.
         </p>
         <label className="mt-1 flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Brief height (desktop)</span>

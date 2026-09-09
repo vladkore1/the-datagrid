@@ -912,7 +912,7 @@ const hierarchyDetailPropRows: ReferenceRow[] = [
     type: "number | (({ data }) => number)",
     defaultValue: "80",
     description:
-      "Height of the whole expanded row on the table; the panel scrolls the rest. The mobile list sizes it to its content.",
+      "Height of the whole expanded row on the table; the panel scrolls the rest. The mobile layout sizes it to its content instead.",
   },
   {
     name: "multiRowExpand",
@@ -4032,10 +4032,11 @@ type TypeSize = { width: number; height: number };`}
             A row detail panel is one region with the row's fields
           </strong>{" "}
           in the list variant, so the chevron and a tap on the row do the same
-          thing and the brief sits at the bottom of what opens. It is sized by
-          its content there rather than by <code>rowExpandHeight</code>, which
-          would put a scroll region inside the page's own scroll, and it lines
-          up with the row's title. Set{" "}
+          thing and the brief sits at the bottom of what opens. Both variants
+          size the panel to their content rather than to{" "}
+          <code>rowExpandHeight</code>, which would put a scroll region inside
+          the page's own scroll, and in the list it lines up with the row's
+          title. Set{" "}
           <code>--tdg-mobile-row-details-inset</code> to widen it, and{" "}
           <code>--tdg-mobile-row-padding-x</code> to <code>0</code> as well to
           reach the row's edge. On desktop the panel stays full-bleed as it

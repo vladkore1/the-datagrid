@@ -1171,10 +1171,10 @@ export function MobileGridList({
         onKeyDown={(event) => event.stopPropagation()}
         role="region"
         aria-label={`Details for ${row.id}`}
-        className="mt-2 w-full basis-full overflow-auto border-t border-border pt-3"
-        style={{
-          height: masterDetail.getDetailHeight(row.original, rowIndex, 52),
-        }}
+        /* Content-sized, as in the list variant: `rowExpandHeight` is the
+           height of a table row plus its panel, and a card has no such band
+           to measure against. */
+        className="mt-2 w-full basis-full border-t border-border pt-3"
       >
         {masterDetail.renderDetails(row.original, rowIndex)}
       </div>
