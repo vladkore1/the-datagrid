@@ -521,15 +521,16 @@ export function MobileGridList({
     if (!searchEnabled || !searchIndex) return rows;
     return filterDataGridSearchIndex(searchIndex, deferredQuery);
   }, [deferredQuery, rows, searchEnabled, searchIndex]);
-  const displayedResultCount =
-    !searchEnabled && authoritativeResultCount != null
-      ? authoritativeResultCount
-      : filteredRows.length;
+  // Only a search this component actually ran moves the count. With no query,
+  // or one the loader answered, the count already reported upstream stands --
+  // on a tree that is the retained records, not the capped rows on screen.
+  const countOwnedHere = searchEnabled && searchIndex != null;
+  const displayedResultCount = countOwnedHere
+    ? filteredRows.length
+    : (authoritativeResultCount ?? filteredRows.length);
   React.useEffect(() => {
-    if (searchEnabled) {
-      onFilteredRowsCountChange?.(filteredRows.length);
-    }
-  }, [filteredRows.length, onFilteredRowsCountChange, searchEnabled]);
+    if (countOwnedHere) onFilteredRowsCountChange?.(filteredRows.length);
+  }, [countOwnedHere, filteredRows.length, onFilteredRowsCountChange]);
 
   React.useEffect(() => {
     if (!searchEnabled && (query || committedQuery)) {
