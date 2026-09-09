@@ -1213,6 +1213,12 @@ export function MobileGridList({
         : undefined;
 
       const opensOnTap = expandable && listExpand === "click" && !rowIsDisabled;
+      // A tap alone reaches neither a keyboard nor a switch, so where no
+      // toggle is rendered the row's own title carries the control instead.
+      const rowTitleOpens =
+        opensOnTap &&
+        !briefToggleShown &&
+        !(expandable && showRowExpandToggle && !briefActive);
       const listRowHandlers = opensOnTap
         ? {
             ...rowHandlers,
@@ -1267,9 +1273,6 @@ export function MobileGridList({
                 } as React.CSSProperties)
           }
           data-expanded={rowExpanded ? "true" : undefined}
-          aria-expanded={
-            expandable && !showRowExpandToggle ? rowExpanded : undefined
-          }
           {...listRowHandlers}
         >
           <div
@@ -1289,13 +1292,27 @@ export function MobileGridList({
             ) : null}
             <div className="min-w-0 flex-1">
               {primaryCell ? (
-                <div
-                  className="tdg-mobile-cell min-w-0 truncate text-sm font-semibold text-foreground"
-                  data-slot="mobile-cell"
-                  data-cell-role="primary"
-                >
-                  {renderCellContent(primaryCell)}
-                </div>
+                rowTitleOpens ? (
+                  <button
+                    type="button"
+                    className="tdg-mobile-cell block w-full min-w-0 truncate rounded-sm text-left text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    data-slot="mobile-cell"
+                    data-cell-role="primary"
+                    aria-expanded={rowExpanded}
+                    aria-controls={fieldsPanelId}
+                    onClick={() => toggleFields()}
+                  >
+                    {renderCellContent(primaryCell)}
+                  </button>
+                ) : (
+                  <div
+                    className="tdg-mobile-cell min-w-0 truncate text-sm font-semibold text-foreground"
+                    data-slot="mobile-cell"
+                    data-cell-role="primary"
+                  >
+                    {renderCellContent(primaryCell)}
+                  </div>
+                )
               ) : null}
               {listDetailCells.length ? (
                 <div className="tdg-mobile-row-summary flex min-w-0 flex-wrap items-center text-xs text-muted-foreground">
