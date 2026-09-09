@@ -2788,13 +2788,10 @@
   cursor: inherit;
 }
 
-/* Not a `.tdg-row` itself, so it reads the token rather than inheriting. */
-.tdg-root [data-slot="tree-branch-more-button"] {
-  cursor: var(--tdg-row-cursor, auto);
-}
-
+/* Always a real control, so it does not borrow the row's cursor token. */
+.tdg-root [data-slot="tree-branch-more-button"],
 .tdg-root .tdg-mobile-branch-more button {
-  cursor: var(--tdg-mobile-row-tap-cursor, auto);
+  cursor: pointer;
 }
 
 /* Swallows its own clicks, so it must not borrow the row's pointer. */

@@ -217,10 +217,9 @@ export default function HierarchyScaleExample() {
       style={
         {
           "--tdg-mobile-tree-indent": `${indent}px`,
-          // A row here opens on tap, so it says so under the pointer, on the
-          // mobile list and on the table alike.
+          // Only the mobile row opens on tap, so only it says so under the
+          // pointer. A table row here does nothing on click.
           "--tdg-mobile-row-tap-cursor": "pointer",
-          "--tdg-row-cursor": "pointer",
           ...(insetBackground
             ? {}
             : { "--tdg-mobile-row-indent-inset": "0px" }),
