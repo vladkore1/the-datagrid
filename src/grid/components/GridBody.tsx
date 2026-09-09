@@ -1976,15 +1976,29 @@ export function GridBody(props: GridBodyProps) {
         )
       : undefined;
     const branchMoreRow = branchTruncation ? (
-      <TableRow data-slot="tree-branch-more" data-row-id={row.id}>
-        <TableCell colSpan={renderedTableColumnCount} className="!py-1">
+      <TableRow
+        data-slot="tree-branch-more"
+        data-row-id={row.id}
+        className="bg-[var(--tdg-row-bg)]"
+      >
+        <TableCell
+          colSpan={renderedTableColumnCount}
+          className={cn(
+            "!py-1",
+            showHorizontalCellBorders &&
+              "border-b [border-color:var(--tdg-cell-border-color)]"
+          )}
+        >
           <button
             type="button"
             data-slot="tree-branch-more-button"
             className="inline-flex h-8 items-center rounded-sm px-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            /* Past the chevron slot every child reserves, so the control lines
+               up with their text rather than with their toggles. */
             style={{
-              marginInlineStart:
-                branchTruncation.depth * Math.max(0, treeNestingSize ?? 22),
+              marginInlineStart: `calc(${
+                branchTruncation.depth * Math.max(0, treeNestingSize ?? 22)
+              }px + 1.5rem)`,
             }}
             onClick={(event) => {
               event.stopPropagation();
