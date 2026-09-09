@@ -30,6 +30,16 @@ Node metadata is available to custom cells and lifecycle callbacks. Leaf and
 non-expandable nodes do not present a working toggle. Expansion controls are
 keyboard operable and expose their state through ARIA.
 
+`treeBranchPageSize` caps how many children of one sibling group render at a
+time, with a control after the last of them revealing another page. The table
+shows every child unless the prop asks otherwise; a phone falls back to the
+mobile page size, so a parent with thousands of children cannot bury the roots
+after it. The cap is per sibling group, so revealing more of one branch never
+displaces another, and a branch that is closed and reopened starts from its
+first page again. On the table the control rides as a row after the child it
+follows, the way a detail panel does, and its height is measured into that
+row rather than becoming a second kind of item in the virtual layout.
+
 Local filtering evaluates all loaded descendants, retains ancestor context,
 and temporarily reveals paths to matches. Clearing filters restores the user's
 previous expansion map. This automatic reveal is an explicitly requested
