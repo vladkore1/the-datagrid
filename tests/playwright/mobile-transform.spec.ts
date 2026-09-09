@@ -238,6 +238,17 @@ test.describe("allowMobileTransform", () => {
     await expect(actionsHeader).toContainText("Customer account actions");
     await expect(actionsResizer).toBeVisible();
 
+    /*
+     * The bar is revealed by the hover above and fades in, so a measurement
+     * taken before it mounts compares the handle against nothing at all and
+     * passes without having looked.
+     */
+    await expect(
+      grid.locator(
+        '[data-slot="scroll-area-scrollbar"][data-orientation="vertical"]'
+      )
+    ).toBeVisible();
+
     const edgeLayout = await grid.evaluate((gridElement) => {
       const frame = gridElement.querySelector<HTMLElement>(
         '[data-slot="grid-frame"]'
@@ -279,8 +290,17 @@ test.describe("allowMobileTransform", () => {
           handleRect.right <= headerRect.right + 1,
         edgeAlignment: Math.abs(clipRight - headerRect.right),
         handleFullyVisible: handleRect.right <= clipRight + 1,
+        scrollbarClearsHeader: Boolean(
+          scrollbarRect && scrollbarRect.top >= handleRect.bottom
+        ),
+        // The bar runs beside the body, below the header the handle lives in,
+        // so the two clear each other by not sharing any rows of pixels. Only
+        // where they do share rows does the handle have to stop short of it.
         handleClearsScrollbar:
-          !scrollbarRect || handleRect.right <= scrollbarRect.left + 1,
+          !scrollbarRect ||
+          Math.min(handleRect.bottom, scrollbarRect.bottom) <=
+            Math.max(handleRect.top, scrollbarRect.top) ||
+          handleRect.right <= scrollbarRect.left + 1,
         handleHitTarget:
           hitTarget === handle ||
           Boolean(hitTarget && handle.contains(hitTarget)),
@@ -301,6 +321,7 @@ test.describe("allowMobileTransform", () => {
     expect(edgeLayout?.handleInsideHeader).toBe(true);
     expect(edgeLayout?.edgeAlignment ?? Infinity).toBeLessThanOrEqual(1);
     expect(edgeLayout?.handleFullyVisible).toBe(true);
+    expect(edgeLayout?.scrollbarClearsHeader).toBe(true);
     expect(edgeLayout?.handleClearsScrollbar).toBe(true);
     expect(edgeLayout?.handleHitTarget).toBe(true);
 
