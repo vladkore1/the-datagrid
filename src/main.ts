@@ -65,6 +65,7 @@ export type {
 
 // optionally useful for consumers
 export { DEFAULT_FILTER_TYPES, filterTypes } from "./filters/utils";
+export { useMobileTransformActive } from "./hooks/useMobileTransformActive";
 
 export type {
   CellProps,
@@ -141,6 +142,11 @@ export type {
   TypeLoadMaskProps,
   TypeShowCellBorders,
   TypeMobileTransformProps,
+  TypeMobileCardColumns,
+  TypeMobileCardFields,
+  TypeMobileListActionsSide,
+  TypeMobileSettingsSurface,
+  TypeMobileListExpand,
   TypeMobileListRows,
   TypeMobileListActions,
   TypeMobileColumnRole,

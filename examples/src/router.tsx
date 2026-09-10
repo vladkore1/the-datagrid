@@ -40,6 +40,7 @@ import StackedColumnsExamplePage from "./StackedColumnsExamplePage";
 import ToolbarGridExample from "./ToolbarGridExample";
 import UsersGridExample from "./UsersGridExample";
 import HierarchyExamplePage from "./HierarchyExamplePage";
+import HierarchyScaleExample from "./HierarchyScaleExample";
 import DocsHomePage from "./docs/DocsHomePage";
 import DocsIndexPage from "./docs/DocsIndexPage";
 import DocsLayout from "./docs/DocsLayout";
@@ -281,6 +282,13 @@ const exampleHierarchyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "examples/hierarchy",
   component: HierarchyExamplePage,
+});
+
+// Scratch page, kept out of the catalog on purpose. See HierarchyScaleExample.
+const exampleHierarchyScaleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "examples/hierarchy-scale",
+  component: HierarchyScaleExample,
 });
 
 const exampleInovuaParityRoute = createRoute({
@@ -556,6 +564,7 @@ const routeTree = rootRoute.addChildren([
   exampleColumnsRoute,
   exampleEditingRoute,
   exampleHierarchyRoute,
+  exampleHierarchyScaleRoute,
   exampleInovuaParityRoute,
   exampleSelectionRoute,
   exampleToolbarRoute,

@@ -30,6 +30,16 @@ Node metadata is available to custom cells and lifecycle callbacks. Leaf and
 non-expandable nodes do not present a working toggle. Expansion controls are
 keyboard operable and expose their state through ARIA.
 
+`treeBranchPageSize` caps how many children of one sibling group render at a
+time, with a control after the last of them revealing another page. The table
+shows every child unless the prop asks otherwise; a phone falls back to the
+mobile page size, so a parent with thousands of children cannot bury the roots
+after it. The cap is per sibling group, so revealing more of one branch never
+displaces another, and a branch that is closed and reopened starts from its
+first page again. On the table the control rides as a row after the child it
+follows, the way a detail panel does, and its height is measured into that
+row rather than becoming a second kind of item in the virtual layout.
+
 Local filtering evaluates all loaded descendants, retains ancestor context,
 and temporarily reveals paths to matches. Clearing filters restores the user's
 previous expansion map. This automatic reveal is an explicitly requested
@@ -61,7 +71,8 @@ Details must not become selectable records, inflate record counts or appear
 as synthetic rows in exports. Toggle clicks must not accidentally select or
 edit the master row. Collapse returns focus predictably to its control.
 
-`rowExpandHeight` is the total expanded height, default 80. The initial
+`rowExpandHeight` is the total expanded height on the table, default 80. The
+mobile layout ignores it and sizes the panel to its content. The initial
 implementation supports numeric and per-record total heights; natural master
 heights are observed to subtract the actual master from that total. The virtual
 item includes the master row plus its remaining detail height, so
@@ -110,7 +121,7 @@ tokens, focus rings and button conventions.
 | Detail state    | `enableRowExpand`, expanded/default/collapsed maps, `true` sentinel, `multiRowExpand`, `isRowExpandable`, `unexpandableRows`, original row lifecycle callbacks and vetoes                                    | Bulk/imperative detail methods                                                                                                                                                                          |
 | Detail content  | `renderRowDetails`, `renderDetailsGrid`, `TypeRowDetailsInfo`, configurable `rowExpandColumn`, custom icons, nested grids                                                                                    | `detailsGridCacheKey`, grid registration and lifecycle callbacks; second renderer argument is currently an empty props object                                                                           |
 | Detail sizing   | Numeric/function `rowExpandHeight`, total desktop height, natural master measurement, composite virtual item                                                                                                 | `rowDetailsWidth` modes, `growExpandHeightWithDetails`, and automatic nested-grid growth                                                                                                                |
-| Mobile          | Tree controls and detail panels in existing responsive cards; shared expansion state                                                                                                                         | Mobile cards keep natural master height and use `rowExpandHeight - 52` for the panel budget. Built-in flat mobile quick search is hidden for trees; use the grid filter API or optional search package. |
+| Mobile          | Tree controls and detail panels in existing responsive cards; shared expansion state                                                                                                                         | The mobile layout sizes a detail panel to its content in both variants: `rowExpandHeight` is a table row plus its panel, and a card has no fixed row band to measure against. Built-in flat mobile quick search is hidden for trees; use the grid filter API or optional search package. |
 
 Deferred props are deliberately absent from the public type surface. No vendor
 enterprise code is included. `renderDetailsGrid` currently shares the ordinary

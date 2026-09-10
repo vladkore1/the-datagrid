@@ -141,9 +141,17 @@ import { useGridScrollApi } from "./hooks/useGridScrollApi";
 import { useGridSelection } from "./hooks/useGridSelection";
 import { useGridToolbarBridge } from "./hooks/useGridToolbarBridge";
 import { useGridVirtualListApi } from "./hooks/useGridVirtualListApi";
-import { useTreeGrid } from "./hierarchy/useTreeGrid";
+import {
+  TREE_BRANCH_MORE_ROW_HEIGHT,
+  useTreeGrid,
+} from "./hierarchy/useTreeGrid";
 import { useTreeRowAdapter } from "./hierarchy/treeRowAdapter";
 import { countTreeRecords, type TreeRecord } from "./hierarchy/treeData";
+import {
+  filterRecordsByDataGridSearch,
+  normalizeDataGridSearchText,
+  resolveSearchedColumns,
+} from "./utils/search";
 import {
   isMasterDetailEnabled,
   useMasterDetail,
@@ -431,10 +439,32 @@ function ReactDataGrid(props: TypeDataGridProps) {
         allowMobileTransform,
         mobileTransform: props.mobileTransform,
         gridPaginationEnabled: (props.pagination ?? false) !== false,
+        treeEnabled: props.treeEnabled === true,
       }),
-    [allowMobileTransform, props.mobileTransform, props.pagination]
+    [
+      allowMobileTransform,
+      props.mobileTransform,
+      props.pagination,
+      props.treeEnabled,
+    ]
   );
   const isMobileViewport = useMediaQuery(mobileTransformConfig.mediaQuery);
+  const emitSearchColumnIdsChange =
+    mobileTransformConfig.onSearchColumnIdsChange;
+  // Held here rather than in the mobile layout, which unmounts the moment the
+  // viewport widens and would drop a persisted scope with it.
+  const [searchColumnIds, setSearchColumnIds] = useControllableState<
+    string[] | undefined
+  >({
+    value: mobileTransformConfig.searchColumnIds,
+    defaultValue: mobileTransformConfig.defaultSearchColumnIds,
+    onChange: React.useCallback(
+      (next: string[] | undefined) => {
+        if (next) emitSearchColumnIdsChange?.(next);
+      },
+      [emitSearchColumnIdsChange]
+    ),
+  });
   const hasColumnEditing = inputColumns.some(
     (column) => Boolean(column.editable) && isColumnVisible(column)
   );
@@ -1089,12 +1119,63 @@ function ReactDataGrid(props: TypeDataGridProps) {
     ReadonlySet<TreeRecord>
   >(() => new Set());
   const [count, setCount] = React.useState<number>(0);
+  /*
+   * Held here, not in the layout, which unmounts when the viewport widens. The
+   * loader searches every sibling group, so a match inside a closed branch is
+   * found and its ancestors revealed.
+   */
+  const [mobileSearchQuery, setMobileSearchQuery] = React.useState("");
+  const treeSearchRows = React.useMemo(() => {
+    if (props.treeEnabled !== true) return undefined;
+    if (normalizeDataGridSearchText(mobileSearchQuery).length === 0)
+      return undefined;
+    const searched = resolveSearchedColumns(inputColumns, {
+      searchColumnIds,
+      checkboxColumnId: checkboxColId,
+    });
+    return (records: TreeRecord[]) =>
+      filterRecordsByDataGridSearch(records, searched, mobileSearchQuery);
+  }, [
+    checkboxColId,
+    inputColumns,
+    mobileSearchQuery,
+    searchColumnIds,
+    props.treeEnabled,
+  ]);
+
+  /*
+   * The loader applies this to whatever it loaded, a function source included.
+   * An authoritative remote page is the exception: only one page is in hand,
+   * so searching it would claim an answer about rows the grid has not seen.
+   */
+  const treeSearchApplied =
+    treeSearchRows != null &&
+    (Array.isArray(dataSource) ||
+      paginationMode === false ||
+      paginationMode === "local");
+
+  // Opt-in on the table, which has always shown every child. A phone stays
+  // bounded either way by falling back to its own page size.
+  const treeBranchPageSize =
+    props.treeBranchPageSize ??
+    (mobileTransformActive
+      ? mobileTransformConfig.pageSize
+      : Number.POSITIVE_INFINITY);
+
+  const treeCapsBranches =
+    props.treeEnabled === true && Number.isFinite(treeBranchPageSize);
+
   const tree = useTreeGrid({
     props,
+    branchPageSize: treeBranchPageSize,
     sourceRows,
     idProperty,
+    // A function source owns filtering, so only the search the grid ran itself
+    // reveals a path to a match there.
     revealMatches:
-      (activeLocalFilter || searchActive) && typeof dataSource !== "function",
+      ((activeLocalFilter || searchActive) &&
+        typeof dataSource !== "function") ||
+      treeSearchApplied,
     revealNodes: treeRevealNodes,
   });
   const rows: typeof sourceRows = tree.rows;
@@ -1148,6 +1229,7 @@ function ReactDataGrid(props: TypeDataGridProps) {
     reload,
   } = useGridDataLoader({
     treeEnabled: tree.enabled,
+    treeSearchRows,
     nodesProperty: props.nodesProperty ?? "nodes",
     detailColumnId: showDetailColumn ? detailColumnId : undefined,
     setTreeRevealNodes,
@@ -2119,45 +2201,61 @@ function ReactDataGrid(props: TypeDataGridProps) {
   );
   const initialRowHeight = resolveRowHeight(0);
   const getDetailHeight = masterDetail.getDetailHeight;
+  const branchControlRowIds = React.useMemo(
+    () => new Set(tree.branchTruncations.map((item) => item.afterRowId)),
+    // A fresh array every render, so compare the ids it carries.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(tree.branchTruncations.map((item) => item.afterRowId))]
+  );
   const resolveVirtualRowHeight = React.useCallback(
     (index: number) => {
       const baseHeight = resolveRowHeight(index);
       const row = rowModel[index];
       return (
         baseHeight +
-        (row ? getDetailHeight(row.original, index, baseHeight) : 0)
+        (row ? getDetailHeight(row.original, index, baseHeight) : 0) +
+        (row && branchControlRowIds.has(row.id)
+          ? TREE_BRANCH_MORE_ROW_HEIGHT
+          : 0)
       );
     },
-    [resolveRowHeight, rowModel, getDetailHeight]
+    [resolveRowHeight, rowModel, getDetailHeight, branchControlRowIds]
   );
 
   const rowVirtualizer = useVirtualizer({
     count: rowModel.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: resolveVirtualRowHeight,
-    measureElement: masterDetail.enabled
-      ? (element) => {
-          const details = element.nextElementSibling;
-          const height = element.getBoundingClientRect().height;
-          const id = element.getAttribute("data-row-id");
-          if (
-            rowHeight === null &&
-            masterDetail.enabled &&
-            id !== null &&
-            height > 0
-          ) {
-            setNaturalMasterHeights((previous) =>
-              previous[id] === height ? previous : { ...previous, [id]: height }
-            );
+    measureElement:
+      masterDetail.enabled || treeCapsBranches
+        ? (element) => {
+            const height = element.getBoundingClientRect().height;
+            const id = element.getAttribute("data-row-id");
+            if (
+              rowHeight === null &&
+              masterDetail.enabled &&
+              id !== null &&
+              height > 0
+            ) {
+              setNaturalMasterHeights((previous) =>
+                previous[id] === height
+                  ? previous
+                  : { ...previous, [id]: height }
+              );
+            }
+            // A row can be trailed by its detail panel and by a branch
+            // control, in that order, and both belong to its measurement.
+            let total = height;
+            let sibling = element.nextElementSibling;
+            while (sibling) {
+              const slot = sibling.getAttribute("data-slot");
+              if (slot !== "row-details" && slot !== "tree-branch-more") break;
+              total += sibling.getBoundingClientRect().height;
+              sibling = sibling.nextElementSibling;
+            }
+            return total;
           }
-          return (
-            height +
-            (details?.getAttribute("data-slot") === "row-details"
-              ? details.getBoundingClientRect().height
-              : 0)
-          );
-        }
-      : undefined,
+        : undefined,
     // Natural-height rows need the wider measurement buffer for accurate
     // smooth-scroll completion. Deterministically sized rows can use the
     // smaller buffer without reconciling another large set of horizontally
@@ -3567,8 +3665,23 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 defaultSortDirection={defaultSortDir}
                 sortable={sortable}
                 sortFunctions={sortFunctions}
-                searchEnabled={!searchConnected && !tree.enabled}
-                columnPickerEnabled={toolbarController == null}
+                searchEnabled={
+                  mobileTransformConfig.showSearch ??
+                  (!searchConnected && !tree.enabled)
+                }
+                columnPickerEnabled={
+                  mobileTransformConfig.showColumnPicker ??
+                  toolbarController == null
+                }
+                sortEnabled={mobileTransformConfig.showSort}
+                showSettings={mobileTransformConfig.showSettings}
+                settingsSurface={mobileTransformConfig.settingsSurface}
+                searchColumnIds={searchColumnIds}
+                onQueryChange={setMobileSearchQuery}
+                searchHandledUpstream={treeSearchApplied}
+                onSearchColumnIdsChange={setSearchColumnIds}
+                resultCountEnabled={mobileTransformConfig.showResultCount}
+                stickyOffset={mobileTransformConfig.stickyOffset}
                 authoritativeResultCount={
                   tree.enabled
                     ? countTreeRecords(
@@ -3590,6 +3703,15 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 defaultVariant={mobileTransformConfig.defaultVariant}
                 listRows={mobileTransformConfig.listRows}
                 listActions={mobileTransformConfig.listActions}
+                listActionsSide={mobileTransformConfig.listActionsSide}
+                listFieldIds={mobileTransformConfig.listFieldIds}
+                listFieldLimit={mobileTransformConfig.listFieldLimit}
+                listExpand={mobileTransformConfig.listExpand}
+                showRowExpandToggle={mobileTransformConfig.showRowExpandToggle}
+                cardFields={mobileTransformConfig.cardFields}
+                cardColumns={mobileTransformConfig.cardColumns}
+                cardLabelWidth={mobileTransformConfig.cardLabelWidth}
+                cardFieldLimit={mobileTransformConfig.cardFieldLimit}
                 showVariantToggle={mobileTransformConfig.showVariantToggle}
                 showToolbar={mobileTransformConfig.showToolbar}
                 onVariantChange={mobileTransformConfig.onVariantChange}
@@ -3797,6 +3919,8 @@ function ReactDataGrid(props: TypeDataGridProps) {
                   </colgroup>
                   <GridBody
                     tree={tree}
+                    treeNestingSize={props.treeNestingSize}
+                    treeBranchPageSize={treeBranchPageSize}
                     treeColumn={(() => {
                       const column =
                         (props.treeColumn

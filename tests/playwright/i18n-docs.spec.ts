@@ -56,6 +56,15 @@ const overridableI18nDefaults = {
   afterOrOn: '"After Or On" (filter cell); "afterOrOn" (operator menu)',
   before: '"Before" (filter cell); "before" (operator menu)',
   beforeOrOn: '"Before Or On" (filter cell); "beforeOrOn" (operator menu)',
+  mobileCollapseRow: '"Hide details"',
+  mobileExpandRow: '"Show details"',
+  mobileFilterColumns: '"Filter columns"',
+  mobileNoColumnsMatch: '"No columns match"',
+  mobileRowView: '"Row view"',
+  mobileSearchColumns: '"Searched columns"',
+  mobileSelectAllColumns: '"Select all"',
+  mobileSettings: '"Settings"',
+  mobileSortNone: '"None"',
 } as const;
 
 const stringOnlyI18nKeys = new Set([
@@ -99,6 +108,9 @@ const stringOnlyI18nKeys = new Set([
   "mobilePagination",
   "mobilePreviousPage",
   "mobileNextPage",
+  "mobileCollapseRow",
+  "mobileExpandRow",
+  "mobileSettings",
 ]);
 
 test("documents every currently overridable i18n key", async ({ page }) => {

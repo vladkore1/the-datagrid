@@ -58,6 +58,116 @@
   color: var(--foreground, oklch(0.985 0 0)) !important;
 }
 
+/* The dialog shell is armoured to centre itself, so the settings panel has to
+   overrule it here rather than with utility classes: it pins to the trailing
+   edge over the full height and hands its own body the scrolling. Logical
+   properties throughout, so a right-to-left grid gets it on the other side. */
+.tdg-mobile-settings-drawer {
+  inset-block: 0 !important;
+  inset-inline: auto 0 !important;
+  width: min(22rem, 88vw) !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+  border-inline-start-width: 1px !important;
+  border-start-start-radius: var(--tdg-radius-lg) !important;
+  border-end-start-radius: var(--tdg-radius-lg) !important;
+  border-start-end-radius: 0 !important;
+  border-end-end-radius: 0 !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+/* The shell only fades, so the drawer brings its own slide. Radix keeps the
+   element mounted for the closing animation, so both directions run. */
+@keyframes tdg-settings-drawer-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-drawer-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes tdg-settings-drawer-in-rtl {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-drawer-out-rtl {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* The shell's own fade never plays, since it is the portal that unmounts, so
+   the backdrop fades on the same timings as the drawer it belongs to. */
+@keyframes tdg-settings-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tdg-settings-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.tdg-mobile-settings-backdrop {
+  animation: tdg-settings-backdrop-in 220ms ease-out !important;
+}
+
+.tdg-mobile-settings-backdrop--closing {
+  animation: tdg-settings-backdrop-out 180ms ease-in forwards !important;
+}
+
+.tdg-mobile-settings-drawer[data-state="open"] {
+  animation: tdg-settings-drawer-in 220ms ease-out !important;
+}
+
+.tdg-mobile-settings-drawer[data-closing="true"] {
+  animation: tdg-settings-drawer-out 180ms ease-in forwards !important;
+}
+
+[dir="rtl"] .tdg-mobile-settings-drawer[data-state="open"] {
+  animation-name: tdg-settings-drawer-in-rtl !important;
+}
+
+[dir="rtl"] .tdg-mobile-settings-drawer[data-closing="true"] {
+  animation-name: tdg-settings-drawer-out-rtl !important;
+}
+
 .tdg-mobile-nav-content {
   --tdg-mobile-nav-header-height: 6rem;
   inset: 0 !important;
@@ -2166,7 +2276,15 @@
   bottom: auto !important;
   width: 100% !important;
   min-width: var(--radix-select-trigger-width) !important;
-  overflow: hidden !important;
+  /*
+   * As with the dropdown shell: clipping the block axis too leaves a list
+   * taller than the space it has with no way to reach the rest of itself. The
+   * cap has to be set here as well, because the component asks for it through
+   * a utility class that this build does not emit.
+   */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-height: var(--radix-select-content-available-height, 60vh) !important;
   background: var(--tdg-select-list-bg) !important;
   color: var(--tdg-select-list-color) !important;
   border-style: solid !important;
@@ -2524,6 +2642,238 @@
 }
 
 /* Themable without reaching into the classes. */
+/*
+ * The mobile layout's spacing, in one place and behind tokens, so a consumer
+ * can retune a row's padding or the distance between a label and its value
+ * without forking the component. Every default is the value the layout
+ * shipped with.
+ */
+.tdg-root .tdg-mobile-row {
+  padding: var(--tdg-mobile-row-padding-y, 0.75rem)
+    var(--tdg-mobile-row-padding-x, 0.75rem);
+  gap: var(--tdg-mobile-row-gap, 0.75rem);
+}
+
+.tdg-root .tdg-mobile-row-line {
+  gap: var(--tdg-mobile-row-gap, 0.75rem);
+}
+
+/*
+ * Fields sized to their own content, wrapping as whole fields. Columns of one
+ * width were tried and dropped: they line up down the list, but they stretch
+ * the fields apart on a wide row and force a break inside a value on a narrow
+ * one, and neither is worth the alignment.
+ */
+.tdg-root .tdg-mobile-row-summary {
+  margin-top: var(--tdg-mobile-summary-margin-top, 0.125rem);
+  column-gap: var(--tdg-mobile-summary-gap-x, 0.75rem);
+  row-gap: var(--tdg-mobile-summary-gap-y, 0.125rem);
+}
+
+.tdg-root .tdg-mobile-row-field {
+  gap: var(--tdg-mobile-summary-label-gap, 0.25rem);
+}
+
+.tdg-root .tdg-mobile-card {
+  padding: var(--tdg-mobile-card-padding, 1rem);
+}
+
+.tdg-root .tdg-mobile-card-header {
+  gap: var(--tdg-mobile-card-gap, 0.75rem);
+}
+
+/*
+ * A card field stacks its label over its value by default; `inline` puts them
+ * side by side against one shared label track, which is what lines the values
+ * up down a card, and `auto` asks for that only while the fields are in one
+ * column. Every shape renders the same markup, so the choice lives here rather
+ * than in a second branch of the component. The label track is
+ * `--tdg-mobile-card-label-width`, which `cardLabelWidth` also sets.
+ */
+.tdg-root .tdg-mobile-card-field > dd {
+  margin-top: 0.125rem;
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field {
+  display: grid;
+  grid-template-columns: var(--tdg-mobile-card-label-width, 40%) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--tdg-mobile-card-label-gap, 0.75rem);
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field
+  > dd,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field
+  > dd {
+  margin-top: 0;
+}
+
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="inline"]
+  > .tdg-mobile-card-field
+  > dt,
+.tdg-root
+  .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="1"]
+  > .tdg-mobile-card-field
+  > dt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Below the width where the fields split in two, `auto` is inline. */
+@media (max-width: 639.98px) {
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field {
+    display: grid;
+    grid-template-columns: var(--tdg-mobile-card-label-width, 40%) minmax(
+        0,
+        1fr
+      );
+    align-items: baseline;
+    column-gap: var(--tdg-mobile-card-label-gap, 0.75rem);
+  }
+
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field
+    > dd {
+    margin-top: 0;
+  }
+
+  .tdg-root
+    .tdg-mobile-card-fields[data-card-fields="auto"][data-card-columns="auto"]
+    > .tdg-mobile-card-field
+    > dt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.tdg-root .tdg-mobile-card-fields {
+  column-gap: var(--tdg-mobile-card-field-gap-x, 1.25rem);
+  row-gap: var(--tdg-mobile-card-field-gap-y, 0.75rem);
+}
+
+/*
+ * An open row and its fields have to read as one block rather than as two rows.
+ * Painted here rather than with a utility class: the row already carries a
+ * background from a token, and two background classes on one element leave the
+ * winner to stylesheet order. Half of a near-white token is about as light as
+ * this can go and still be seen; a fifth of it was invisible.
+ */
+/* `data-tappable` marks the rows that really are click targets. */
+.tdg-root .tdg-mobile-row[data-tappable="true"] {
+  cursor: var(--tdg-mobile-row-tap-cursor, auto);
+}
+
+.tdg-root .tdg-row {
+  cursor: var(--tdg-row-cursor, auto);
+}
+
+/* A button's own UA cursor breaks inheritance; this restores it. */
+.tdg-root [data-slot="tree-toggle"],
+.tdg-root [data-slot="row-detail-toggle"] {
+  cursor: inherit;
+}
+
+/* Not a `.tdg-row` itself, so it reads the token rather than inheriting. */
+.tdg-root [data-slot="tree-branch-more-button"] {
+  cursor: var(--tdg-row-cursor, auto);
+}
+
+.tdg-root .tdg-mobile-branch-more button {
+  cursor: var(--tdg-mobile-row-tap-cursor, auto);
+}
+
+/* Swallows its own clicks, so it must not borrow the row's pointer. */
+.tdg-root .tdg-mobile-row-fields {
+  cursor: auto;
+}
+
+/* A depth guide down the indent. Transparent by default, so opting out of it
+   is the default. */
+.tdg-root .tdg-mobile-row {
+  background-image: linear-gradient(
+    to right,
+    var(--tdg-mobile-row-indent-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    transparent var(--tdg-mobile-row-indent-inset, 0px) 100%
+  );
+}
+
+[dir="rtl"] .tdg-root .tdg-mobile-row {
+  background-image: linear-gradient(
+    to left,
+    var(--tdg-mobile-row-indent-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    transparent var(--tdg-mobile-row-indent-inset, 0px) 100%
+  );
+}
+
+/* A gradient rather than a flat fill so the indent can stay clear and the
+   depth stay readable. The layout sets the inset per row; at `0px` both stops
+   collapse and the fill is flat, which is the behaviour before this rule. */
+.tdg-root .tdg-mobile-row[data-expanded="true"] {
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to right,
+    var(--tdg-mobile-row-expanded-gutter-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    var(
+        --tdg-mobile-row-expanded-bg,
+        color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
+      )
+      var(--tdg-mobile-row-indent-inset, 0px) 100%
+  ) !important;
+}
+
+[dir="rtl"] .tdg-root .tdg-mobile-row[data-expanded="true"] {
+  background-image: linear-gradient(
+    to left,
+    var(--tdg-mobile-row-expanded-gutter-bg, transparent) 0
+      var(--tdg-mobile-row-indent-inset, 0px),
+    var(
+        --tdg-mobile-row-expanded-bg,
+        color-mix(in oklab, var(--muted, oklch(0.97 0 0)) 50%, transparent)
+      )
+      var(--tdg-mobile-row-indent-inset, 0px) 100%
+  ) !important;
+}
+
+/*
+ * The surface is the keyboard target, and the browser rings it as soon as a key
+ * is pressed, which puts a box around the whole list on top of the active row's
+ * own outline. The active row is the indicator; the container does not need one
+ * as well.
+ */
+.tdg-root:has([data-slot="mobile-grid-list"]) .tdg-surface:focus-visible {
+  outline: none !important;
+}
+
+/*
+ * And the row's outline is painted from here rather than from the component, so
+ * that it follows the surface's own `:focus-visible`: pressing a row to open it
+ * leaves no outline behind, while arrow keys still say which row is active.
+ */
+.tdg-surface:focus-visible
+  [data-slot="mobile-grid-list"][data-active-indicator="true"]
+  .tdg-mobile-row[data-active="true"] {
+  outline: 2px solid var(--tdg-color-ring, var(--ring, oklch(0.708 0 0)));
+  outline-offset: -2px;
+}
+
 .tdg-mobile-pagination {
   color: var(--tdg-mobile-pagination-color, inherit);
   font-size: var(--tdg-mobile-pagination-font-size, 0.75rem);
@@ -2605,9 +2955,13 @@
 
 /* No row height to fill on mobile, so it flattens back into the normal flow it
    was emulating; its own flex arrangement survives. */
+/* A renderer that fills its table cell has no cell to fill here, and the
+   centring that goes with a column's width leaves its content adrift in the
+   middle of a card field. Aligned with every other value instead. */
 .tdg-mobile-cell .tdg-cell-fill {
   position: static !important;
   inset: auto !important;
   height: auto !important;
   width: 100% !important;
+  justify-content: flex-start !important;
 }

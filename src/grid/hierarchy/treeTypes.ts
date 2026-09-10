@@ -33,6 +33,13 @@ export type TypeTreeGridProps = {
   nodePathSeparator?: string;
   generateIdFromPath?: boolean;
   treeNestingSize?: number;
+  /**
+   * Children a branch shows at once, with a control after them for the rest.
+   * Unset shows every child; the mobile layout falls back to
+   * `mobileTransform.pageSize`. Counted per sibling group, so opening one wide
+   * branch cannot push the branches after it off the screen.
+   */
+  treeBranchPageSize?: number;
   expandedNodes?: TypeExpandedNodes;
   defaultExpandedNodes?: TypeExpandedNodes;
   collapseChildrenRecursive?: boolean;

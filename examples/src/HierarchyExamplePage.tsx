@@ -3,12 +3,15 @@ import * as React from "react";
 import { FolderTree, Layers, Search } from "lucide-react";
 
 import ReactDataGrid from "../../src/ReactDataGrid";
+import { resolveThemeBase } from "../../src/theme/context";
+import { useExamplesUi } from "./App";
 import type {
   CellProps,
   TypeColumns,
   TypeComputedProps,
   TypeDataGridProps,
   TypeFilterValue,
+  TypeMobileTransformProps,
 } from "../../src/types";
 import { Button } from "../../src/components/ui/button";
 
@@ -233,11 +236,43 @@ const taskColumns: TypeColumns = [
   { name: "name", header: "Work item", defaultFlex: 1, minWidth: 175 },
   { name: "status", header: "Progress", width: 140 },
 ];
+/*
+ * The rows scroll with the page on a phone and the grid keeps its fixed height
+ * on desktop, which is what the wrappers below switch at `lg`.
+ *
+ * Two summary fields keeps a tree row to one line under its title at 390px;
+ * three wrap. `cardFields` covers an open row as well as a card, and inline
+ * labels read as a table there, which is what a tree is.
+ *
+ * Everything after `cardFields` is pinned to the value it already had: the mere
+ * presence of a `mobileTransform` object moves `defaultVariant`, `listExpand`,
+ * `showVariantToggle`, `showSettings` and `overflow` onto their newer defaults,
+ * and `scroll: "page"` takes `chrome` to `plain` with it, which is what drops a
+ * card's side padding.
+ */
+const mobileTransform: TypeMobileTransformProps = {
+  scroll: "page",
+  listFieldLimit: 2,
+  cardFields: "inline",
+  chrome: "card",
+  defaultVariant: "cards",
+  listExpand: "click",
+  showVariantToggle: false,
+  showSettings: false,
+  overflow: "none",
+};
+
 const initialFilters: TypeFilterValue = [
   { name: "name", type: "string", operator: "contains", value: "" },
 ];
 
-function ProjectDetails({ project }: { project: Project }) {
+function ProjectDetails({
+  project,
+  theme,
+}: {
+  project: Project;
+  theme: string;
+}) {
   return (
     <div
       data-testid={`project-details-${project.id}`}
@@ -263,7 +298,7 @@ function ProjectDetails({ project }: { project: Project }) {
         data-testid={`project-tasks-${project.id}`}
       >
         <ReactDataGrid
-          theme="default-light"
+          theme={theme}
           idProperty="id"
           columns={taskColumns}
           dataSource={project.tasks}
@@ -279,6 +314,8 @@ function ProjectDetails({ project }: { project: Project }) {
 }
 
 export default function HierarchyExamplePage() {
+  const { gridTheme } = useExamplesUi();
+  const gridThemeBase = resolveThemeBase(gridTheme);
   const [virtualized, setVirtualized] = React.useState(true);
   const [controlled, setControlled] = React.useState(false);
   const [acceptChanges, setAcceptChanges] = React.useState(true);
@@ -308,6 +345,8 @@ export default function HierarchyExamplePage() {
   return (
     <div
       data-testid="hierarchy-showcase"
+      data-theme={gridThemeBase === "default" ? undefined : gridTheme}
+      data-theme-base={gridThemeBase === "default" ? undefined : gridThemeBase}
       className="mx-auto w-full max-w-[1440px] space-y-6 [--tdg-color-background:var(--background)] [--tdg-color-foreground:var(--foreground)] [--tdg-color-card:var(--card)] [--tdg-color-muted:var(--muted)] [--tdg-color-muted-foreground:var(--muted-foreground)] [--tdg-color-primary:var(--primary)] [--tdg-color-primary-foreground:var(--primary-foreground)] [--tdg-color-accent:var(--accent)] [--tdg-color-accent-foreground:var(--accent-foreground)] [--tdg-color-border:var(--border)] [--tdg-color-input:var(--input)] [--tdg-color-ring:var(--ring)] [--tdg-radius-sm:calc(var(--radius)-4px)] [--tdg-radius-md:calc(var(--radius)-2px)] [--tdg-radius-lg:var(--radius)]"
     >
       <section className="space-y-5 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
@@ -425,11 +464,11 @@ export default function HierarchyExamplePage() {
         </p>
         <div
           data-testid="hierarchy-tree-grid"
-          className="h-[360px] min-w-0 border-t border-border"
+          className="min-w-0 border-t border-border lg:h-[360px]"
         >
           <ReactDataGrid
             key={`tree-${controlled}`}
-            theme="default-light"
+            theme={gridTheme}
             idProperty="id"
             columns={treeColumns}
             dataSource={units}
@@ -438,6 +477,7 @@ export default function HierarchyExamplePage() {
             treeColumn="name"
             generateIdFromPath
             allowMobileTransform
+            mobileTransform={mobileTransform}
             defaultExpandedNodes={{}}
             {...(controlled ? { expandedNodes } : {})}
             onExpandedNodesChange={({ expandedNodes: next }) => {
@@ -494,19 +534,20 @@ export default function HierarchyExamplePage() {
         </div>
         <div
           data-testid="hierarchy-detail-grid"
-          className="h-[630px] min-w-0 sm:h-[450px]"
+          className="min-w-0 lg:h-[450px]"
         >
           <ReactDataGrid
             key={`details-${controlled}`}
-            theme="default-light"
+            theme={gridTheme}
             idProperty="id"
             columns={projectColumns}
             dataSource={projects}
             renderRowDetails={({ data }) => (
-              <ProjectDetails project={data as Project} />
+              <ProjectDetails project={data as Project} theme={gridTheme} />
             )}
             enableRowExpand
             allowMobileTransform
+            mobileTransform={mobileTransform}
             defaultExpandedRows={{}}
             {...(controlled ? { expandedRows, collapsedRows } : {})}
             onExpandedRowsChange={({

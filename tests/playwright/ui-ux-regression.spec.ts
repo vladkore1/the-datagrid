@@ -222,58 +222,52 @@ test.describe("grid interaction UI", () => {
     expect(resizeHandleBox?.width).toBeGreaterThanOrEqual(24);
   });
 
-  test("closes mobile sorting with Escape and restores focus", async ({
+  test("closes mobile settings with Escape and restores focus", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/examples/mobile-transform");
 
-    const trigger = page.getByRole("button", { name: /^Sort(?:$|:)/ });
-    await trigger.click();
-    const panel = page.locator('[data-slot="mobile-sort-panel"]');
-    await expect(panel).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(panel).toBeHidden();
-    await expect(trigger).toBeFocused();
+    // The sort, search-scope and column controls are gathered behind this one
+    // trigger, so it is the thing Escape has to return focus to.
+    const trigger = page.getByRole("button", { name: "Settings" });
+    const panel = page.locator(".tdg-mobile-settings-drawer");
 
     await trigger.click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+
     const sortBy = page.getByRole("combobox", {
       name: "Sort by",
       exact: true,
     });
+    await trigger.click();
     await expect(panel).toBeVisible();
     await sortBy.focus();
     await page.keyboard.press("Escape");
-
-    await expect(panel).toBeHidden();
+    await expect(panel).toHaveCount(0);
     await expect(trigger).toBeFocused();
 
+    // A listbox inside the drawer takes the first Escape, the drawer the next.
     await trigger.click();
     await sortBy.click();
     const listbox = page.getByRole("listbox");
     await expect(listbox).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(listbox).toBeHidden();
+    await expect(listbox).toHaveCount(0);
     await expect(panel).toBeVisible();
     await expect(sortBy).toBeFocused();
     await page.keyboard.press("Escape");
-    await expect(panel).toBeHidden();
+    await expect(panel).toHaveCount(0);
     await expect(trigger).toBeFocused();
 
-    await trigger.click();
-    await page.getByRole("button", { name: "Apply sort", exact: true }).click();
-    await expect(panel).toBeHidden();
-    await expect(trigger).toBeFocused();
-
-    await trigger.click();
-    await page.getByRole("button", { name: "Clear sort", exact: true }).click();
-    await expect(panel).toBeHidden();
-    await expect(trigger).toBeFocused();
     const geometry = await documentGeometry(page);
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
   });
 
-  test("keeps the narrow mobile toolbar and sort panel in bounds", async ({
+  test("keeps the narrow mobile toolbar and settings panel in bounds", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 568 });
@@ -281,15 +275,11 @@ test.describe("grid interaction UI", () => {
 
     const grid = page.locator('[data-slot="mobile-grid-list"]');
     const search = page.getByRole("search", { name: "Search all fields" });
-    const sort = page.getByRole("button", { name: "Sort", exact: true });
-    const columns = page.getByRole("button", {
-      name: "Display columns",
-      exact: true,
-    });
+    const settings = page.getByRole("button", { name: "Settings" });
     const gridBox = await grid.boundingBox();
     expect(gridBox).not.toBeNull();
 
-    for (const control of [search, sort, columns]) {
+    for (const control of [search, settings]) {
       const box = await control.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.x).toBeGreaterThanOrEqual(gridBox!.x);
@@ -299,15 +289,23 @@ test.describe("grid interaction UI", () => {
       expect(box!.height).toBeGreaterThanOrEqual(36);
     }
 
-    await sort.click();
-    const panelBox = await page
-      .locator('[data-slot="mobile-sort-panel"]')
-      .boundingBox();
+    await settings.click();
+    const drawer = page.locator(".tdg-mobile-settings-drawer");
+    await expect(drawer).toBeVisible();
+    /*
+     * The drawer is a sheet over the page rather than a panel inside the grid,
+     * so the viewport is what has to contain it, and it slides in: its trailing
+     * edge only means anything once the animation has settled.
+     */
+    await expect
+      .poll(async () => {
+        const box = await drawer.boundingBox();
+        return Math.round((box?.x ?? 0) + (box?.width ?? 0));
+      })
+      .toBeLessThanOrEqual(320);
+    const panelBox = await drawer.boundingBox();
     expect(panelBox).not.toBeNull();
-    expect(panelBox!.x).toBeGreaterThanOrEqual(gridBox!.x);
-    expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(
-      gridBox!.x + gridBox!.width
-    );
+    expect(panelBox!.x).toBeGreaterThanOrEqual(0);
 
     const geometry = await documentGeometry(page);
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);

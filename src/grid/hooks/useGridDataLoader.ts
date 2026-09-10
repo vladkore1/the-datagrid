@@ -25,6 +25,16 @@ import { stripFromOrder } from "../utils/gridUtils";
 import { createLoadingStore } from "../utils/loadingStore";
 import type { InternalSearchController } from "../internalProps";
 
+/** Applies both searches where a grid carries an external box and a mobile one. */
+function composeTreeSearch(
+  controller: ((rows: TreeRecord[]) => TreeRecord[]) | undefined,
+  layout: ((rows: TreeRecord[]) => TreeRecord[]) | undefined
+) {
+  if (!controller) return layout;
+  if (!layout) return controller;
+  return (rows: TreeRecord[]) => layout(controller(rows));
+}
+
 /**
  * Returns the previous array when the next one holds the same rows in the same
  * order, so a load that recomputed an identical result does not hand React a
@@ -87,6 +97,8 @@ export type UseGridDataLoaderParams = {
   searchActive: boolean;
   searchConnected: boolean;
   searchFilterRows: InternalSearchController["filterRows"] | undefined;
+  /** A search owned by the layout, e.g. the mobile toolbar's box. */
+  treeSearchRows: ((rows: TreeRecord[]) => TreeRecord[]) | undefined;
   searchValue: string;
   setCount: React.Dispatch<React.SetStateAction<number>>;
   setFilterValue: (next: TypeFilterValue) => void;
@@ -138,6 +150,7 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
     searchActive,
     searchConnected,
     searchFilterRows,
+    treeSearchRows,
     searchValue,
     setCount,
     setFilterValue,
@@ -231,10 +244,12 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
               columns: orderedColumns,
               sortInfo: localSortInfo,
               sortFunctions,
-              search:
+              search: composeTreeSearch(
                 searchActive && searchFilterRows
                   ? (rows) => searchFilterRows(rows, inputColumns)
                   : undefined,
+                treeSearchRows
+              ),
             });
             const nextRows = localPagination
               ? result.data.slice(loadSkip, loadSkip + limit)
@@ -326,6 +341,30 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
           return;
         }
 
+        /*
+         * A function source owns filtering and sorting, but nothing ever told
+         * it about the layout's own search, so applying that to the rows it
+         * returned is the grid's job. Skipped for a genuinely remote page,
+         * where only one page is here and searching it would lie about the
+         * rest.
+         */
+        const applyLoadedTreeSearch = <Row>(snapshot: Row[]): Row[] => {
+          if (!treeEnabled || !treeSearchRows) return snapshot;
+          if (paginationMode !== false && paginationMode !== "local")
+            return snapshot;
+          const result = processTreeData(snapshot as TreeRecord[], {
+            nodesProperty,
+            filterValue: null,
+            filterTypes,
+            columns: orderedColumns,
+            sortInfo: null,
+            sortFunctions,
+            search: treeSearchRows,
+          });
+          setTreeRevealNodes(result.revealNodes);
+          return result.data as Row[];
+        };
+
         const transformStaticPromiseRows = <Row>(snapshot: Row[]): Row[] => {
           // A bare static Promise can still act as a locally composable snapshot
           // when pagination is disabled or explicitly local. With
@@ -335,7 +374,7 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
             dsIsFn ||
             (paginationMode !== false && paginationMode !== "local")
           ) {
-            return snapshot;
+            return applyLoadedTreeSearch(snapshot);
           }
 
           let data = snapshot;
@@ -348,10 +387,12 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
               columns: orderedColumns,
               sortInfo: localSortInfo,
               sortFunctions,
-              search:
+              search: composeTreeSearch(
                 searchActive && searchFilterRows
                   ? (rows) => searchFilterRows(rows, inputColumns)
                   : undefined,
+                treeSearchRows
+              ),
             });
             setTreeRevealNodes(result.revealNodes);
             return result.data as Row[];
@@ -386,14 +427,16 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
           // A count-bearing Promise payload represents an authoritative remote
           // page unless pagination is explicitly local.
           const resultData = dsIsFn
-            ? result.data
+            ? applyLoadedTreeSearch(result.data)
             : localPagination
               ? transformStaticPromiseRows(result.data)
               : result.data;
+          // The page's own count described the rows before the search ran.
+          const searchedTheLoadedPage = dsIsFn && resultData !== result.data;
           const staticPromiseHasLocalPredicate =
             !dsIsFn && localPagination && (searchActive || activeLocalFilter);
           const reportedCount = Number(
-            staticPromiseHasLocalPredicate
+            staticPromiseHasLocalPredicate || searchedTheLoadedPage
               ? resultData.length
               : (result.count ?? resultData.length)
           );
@@ -407,7 +450,8 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
           setRows(nextRows);
           setCount(totalCount);
           notifyFilteredRowsCount(
-            treeEnabled && !dsIsFn && localPagination
+            treeEnabled &&
+              ((!dsIsFn && localPagination) || searchedTheLoadedPage)
               ? countTreeRecords(resultData, nodesProperty)
               : totalCount
           );
@@ -443,6 +487,7 @@ export function useGridDataLoader(params: UseGridDataLoaderParams) {
     },
     [
       treeEnabled,
+      treeSearchRows,
       nodesProperty,
       setTreeRevealNodes,
       dataSource,

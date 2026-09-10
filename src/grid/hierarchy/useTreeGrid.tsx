@@ -7,6 +7,32 @@ import type {
   TypeNodeEvent,
 } from "./treeTypes";
 import { indexTree, type TreeEntry, type TreeRecord } from "./treeData";
+import { cn } from "../../lib/utils";
+
+/** Lets the mobile layout size the toggle without forking it. */
+export type TreeToggleOptions = {
+  nestingSize?: number | string;
+  buttonClassName?: string;
+};
+
+export const TREE_ROOT_BRANCH_KEY = " root";
+
+/*
+ * Fixed so the desktop virtualizer can add it to the owning row's estimate
+ * without measuring: a table cannot nest the control inside the row it
+ * follows, so it rides as a sibling the way a detail panel does. One data
+ * row tall, its rule included.
+ */
+export const TREE_BRANCH_MORE_ROW_HEIGHT = 41;
+
+/** A branch that has more children than it is currently showing. */
+export type TreeBranchTruncation = {
+  branchKey: string;
+  /** Id of the last child on screen, which the control follows. */
+  afterRowId: string;
+  depth: number;
+  hidden: number;
+};
 
 export function useTreeGrid({
   props,
@@ -14,12 +40,15 @@ export function useTreeGrid({
   idProperty,
   revealMatches,
   revealNodes,
+  branchPageSize,
 }: {
   props: TypeTreeGridProps;
   sourceRows: TreeRecord[];
   idProperty: string;
   revealMatches: boolean;
   revealNodes: ReadonlySet<TreeRecord>;
+  /** `Infinity` shows every child, which is the table's own default. */
+  branchPageSize: number;
 }) {
   const enabled = props.treeEnabled === true;
   const nodesProperty = props.nodesProperty ?? "nodes";
@@ -30,6 +59,29 @@ export function useTreeGrid({
       ...props.defaultExpandedNodes,
     }));
   const expanded = props.expandedNodes ?? internalExpanded;
+  const [revealedByBranch, setRevealedByBranch] = React.useState<
+    Record<string, number>
+  >({});
+  const revealBranch = React.useCallback(
+    (branchKey: string, step: number) =>
+      setRevealedByBranch((current) => ({
+        ...current,
+        [branchKey]: (current[branchKey] ?? 0) + Math.max(1, step),
+      })),
+    []
+  );
+  const clearRevealedBranches = React.useCallback((branchKeys: string[]) => {
+    setRevealedByBranch((current) => {
+      const next = { ...current };
+      let changed = false;
+      for (const key of branchKeys) {
+        if (!(key in next)) continue;
+        delete next[key];
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, []);
   const tree = React.useMemo(
     () =>
       enabled
@@ -103,15 +155,30 @@ export function useTreeGrid({
     );
   };
   const visibleEntries: TreeEntry[] = [];
-  const visit = (entries: TreeEntry[]) => {
-    for (const entry of entries) {
+  const branchTruncations: TreeBranchTruncation[] = [];
+  // Per sibling group, so revealing more of one never displaces the others.
+  const visit = (entries: TreeEntry[], branchKey: string) => {
+    const limit = Math.max(
+      1,
+      branchPageSize + (revealedByBranch[branchKey] ?? 0)
+    );
+    entries.forEach((entry, childIndex) => {
+      if (childIndex >= limit) return;
       const index = visibleEntries.length;
       visibleEntries.push(entry);
       if (getNodeProps(entry).expanded && canExpand(entry, index))
-        visit(entry.children);
+        visit(entry.children, entry.id);
+    });
+    if (entries.length > limit) {
+      branchTruncations.push({
+        branchKey,
+        afterRowId: entries[limit - 1]!.id,
+        depth: entries[0]!.depth,
+        hidden: entries.length - limit,
+      });
     }
   };
-  if (enabled) visit(tree.roots);
+  if (enabled) visit(tree.roots, TREE_ROOT_BRANCH_KEY);
   // Preserve row identities across unrelated state changes, particularly the
   // loader's callbacks: a new flat array on every render would retrigger loads.
   const visibleKey = JSON.stringify(visibleEntries.map((entry) => entry.id));
@@ -149,20 +216,29 @@ export function useTreeGrid({
     )
       return;
     const next = { ...expanded, [entry.id]: nodeExpanded };
+    // Reopening starts from the first batch again rather than restoring
+    // however far the branch had been revealed before it closed.
+    const clearedBranches = nodeExpanded ? [] : [entry.id];
     if (!nodeExpanded && (props.collapseChildrenRecursive ?? true)) {
       const collapse = (children: TreeEntry[]) =>
         children.forEach((child) => {
           delete next[child.id];
+          clearedBranches.push(child.id);
           collapse(child.children);
         });
       collapse(entry.children);
     }
     const change = { ...event, nodeExpanded, expandedNodes: next };
     if (props.onNodeExpandChange?.(change) === false) return;
+    if (clearedBranches.length) clearRevealedBranches(clearedBranches);
     if (props.expandedNodes === undefined) setInternalExpanded(next);
     props.onExpandedNodesChange?.(change);
   };
-  const renderToggle = (data: TreeRecord, index: number) => {
+  const renderToggle = (
+    data: TreeRecord,
+    index: number,
+    options?: TreeToggleOptions
+  ) => {
     const entry = byData.get(data);
     if (!entry) return null;
     const nodeProps = getNodeProps(entry);
@@ -171,12 +247,15 @@ export function useTreeGrid({
     const customTool = nodeProps.expanded
       ? props.renderTreeCollapseTool
       : props.renderTreeExpandTool;
+    const nesting = options?.nestingSize ?? props.treeNestingSize ?? 22;
     return (
       <span
         className="inline-flex shrink-0 items-center"
         style={{
           paddingInlineStart:
-            entry.depth * Math.max(0, props.treeNestingSize ?? 22),
+            typeof nesting === "number"
+              ? entry.depth * Math.max(0, nesting)
+              : `calc(${nesting} * ${entry.depth})`,
         }}
       >
         {expandable ? (
@@ -191,7 +270,10 @@ export function useTreeGrid({
                 ? "Matching descendants are shown while filtering"
                 : undefined
             }
-            className="inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              "inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              options?.buttonClassName
+            )}
             onPointerDown={(event) => event.stopPropagation()}
             onDoubleClick={(event) => event.stopPropagation()}
             onClick={(event) => {
@@ -215,7 +297,10 @@ export function useTreeGrid({
             )}
           </button>
         ) : (
-          <span className="inline-block size-7" aria-hidden="true" />
+          <span
+            className={cn("inline-block size-7", options?.buttonClassName)}
+            aria-hidden="true"
+          />
         )}
       </span>
     );
@@ -223,6 +308,8 @@ export function useTreeGrid({
   return {
     enabled,
     rows,
+    branchTruncations,
+    revealBranch,
     getId,
     getMetadata,
     renderToggle,
