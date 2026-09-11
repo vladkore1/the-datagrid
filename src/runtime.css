@@ -1414,6 +1414,13 @@
  * `justify-content` is deliberately absent: `textAlign` ships a `justify-*`
  * utility on this element, and an !important here would beat it.
  */
+/* The horizontal padding a body cell carries, published so a renderer that fills
+   its cell can start where every other cell's text starts instead of guessing.
+   Mirrors the `p-2` on a body cell; change both together. */
+.tdg-root {
+  --tdg-cell-padding-x: 0.5rem;
+}
+
 .tdg-root .tdg-cell-content {
   display: flex !important;
   width: 100% !important;
