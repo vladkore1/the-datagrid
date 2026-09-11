@@ -1180,6 +1180,30 @@ function ReactDataGrid(props: TypeDataGridProps) {
   });
   const rows: typeof sourceRows = tree.rows;
   const getRowKey = tree.getId;
+  /*
+   * Rows sharing an id open together and share one measured height, so they
+   * paint on top of each other. The tree path refuses duplicates outright; the
+   * flat path has always tolerated them, so this warns rather than throws.
+   */
+  const warnedDuplicateIds = React.useRef(new Set<string>());
+  React.useEffect(() => {
+    const seen = new Set<string>();
+    for (let index = 0; index < sourceRows.length; index += 1) {
+      const id = getRowKey(sourceRows[index] as TreeRecord, index);
+      if (!seen.has(id)) {
+        seen.add(id);
+        continue;
+      }
+      if (warnedDuplicateIds.current.has(id)) continue;
+      warnedDuplicateIds.current.add(id);
+      console.warn(
+        `the-datagrid: duplicate row id ${JSON.stringify(id)} from idProperty ` +
+          `${JSON.stringify(idProperty)}. Rows sharing an id open together and ` +
+          `share one measured height. Give each row a unique value, or derive ` +
+          `one from the fields that identify it.`
+      );
+    }
+  }, [sourceRows, getRowKey, idProperty]);
   const hierarchyRowId = React.useCallback(
     (row: unknown, index: number) => getRowKey(row as TreeRecord, index),
     [getRowKey]
