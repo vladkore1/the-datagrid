@@ -716,6 +716,14 @@ export function MobileGridList({
     "Searched columns"
   );
   const mobileRowViewValue = t(i18n, "mobileRowView", "Row view");
+  /* The search bar takes its own labels as props and defaults them to English,
+     so without these it stays English whatever `i18n` says. */
+  const mobileSearchLabel = label("mobileSearch", "Search all fields");
+  const mobileSearchPlaceholder = label(
+    "mobileSearchPlaceholder",
+    mobileSearchLabel
+  );
+  const mobileSearchClearLabel = label("mobileSearchClear", "Clear search");
   const collapseRowLabel = label("mobileCollapseRow", "Hide details");
   const mobileSortLabel =
     typeof mobileSortValue === "string" ? mobileSortValue : "Sort";
@@ -2246,6 +2254,9 @@ export function MobileGridList({
             value={query}
             columns={activeSearchColumns}
             onValueChange={setMobileSearchValue}
+            ariaLabel={mobileSearchLabel}
+            placeholder={mobileSearchPlaceholder}
+            clearLabel={mobileSearchClearLabel}
           />
         ) : (
           <div className="min-w-0 flex-1" aria-hidden="true" />

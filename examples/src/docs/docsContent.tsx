@@ -4356,6 +4356,21 @@ const i18nSections: ReferenceSection[] = [
         "Searched columns",
         "Heading on the settings entry that picks which columns the search reads."
       ),
+      stringI18nRow(
+        "mobileSearch",
+        "Search all fields",
+        "Accessible name for the mobile search field, and its placeholder unless mobileSearchPlaceholder is set."
+      ),
+      stringI18nRow(
+        "mobileSearchPlaceholder",
+        "Search all fields",
+        "Placeholder text in the mobile search field, where it should read differently from the accessible name."
+      ),
+      stringI18nRow(
+        "mobileSearchClear",
+        "Clear search",
+        "Accessible name for the button that empties the mobile search field."
+      ),
       i18nRow(
         "mobileRowView",
         "Row view",
