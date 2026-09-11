@@ -663,6 +663,11 @@ const mobileRowTokens = [
     description: "Gap between a row's parts. 0.75rem.",
   },
   {
+    name: "--tdg-mobile-row-gap-y",
+    description:
+      "Gap between a row's wrapped lines, on its own. Worth setting under listActions: \"title\", where the controls already make the headline's line taller than its text. Defaults to --tdg-mobile-row-gap.",
+  },
+  {
     name: "--tdg-mobile-summary-gap-x",
     description: "Gap between the fields under a title. 0.75rem.",
   },

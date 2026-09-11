@@ -3615,7 +3615,14 @@ function ReactDataGrid(props: TypeDataGridProps) {
         portalContainer={portalContainer}
       >
         <div
-          className="tdg-frame relative flex h-full min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg"
+          /* `flex-auto`, not `h-full`: the root is a column flex container, and
+             under `maxHeight` its own height is `auto`, against which a
+             percentage height is indefinite and collapses to content. Content
+             here is the surface at `flex: 1 1 0%`, so it contributes nothing and
+             the whole grid deadlocks at zero once a measurement resets it, which
+             is what a hidden tab does. A basis of `auto` grows into a bounded
+             root and still reports its content height to an unbounded one. */
+          className="tdg-frame relative flex min-h-0 w-full min-w-0 max-w-full flex-auto flex-col overflow-hidden rounded-lg"
           data-slot="grid-frame"
         >
           <div
@@ -3682,6 +3689,7 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 onSearchColumnIdsChange={setSearchColumnIds}
                 resultCountEnabled={mobileTransformConfig.showResultCount}
                 stickyOffset={mobileTransformConfig.stickyOffset}
+                mobileToolbarActions={props.mobileToolbarActions}
                 authoritativeResultCount={
                   tree.enabled
                     ? countTreeRecords(
@@ -3706,6 +3714,7 @@ function ReactDataGrid(props: TypeDataGridProps) {
                 listActionsSide={mobileTransformConfig.listActionsSide}
                 listFieldIds={mobileTransformConfig.listFieldIds}
                 listFieldLimit={mobileTransformConfig.listFieldLimit}
+                listSummaryWhenOpen={mobileTransformConfig.listSummaryWhenOpen}
                 listExpand={mobileTransformConfig.listExpand}
                 showRowExpandToggle={mobileTransformConfig.showRowExpandToggle}
                 cardFields={mobileTransformConfig.cardFields}

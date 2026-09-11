@@ -6,6 +6,7 @@ import type {
   TypeMobileSettingsSurface,
   TypeMobileListExpand,
   TypeMobileListRows,
+  TypeMobileListSummaryWhenOpen,
   TypeMobileTransformOverflow,
   TypeMobileTransformProps,
   TypeMobileTransformVariant,
@@ -25,6 +26,7 @@ export type ResolvedMobileTransform = {
   listActionsSide: TypeMobileListActionsSide;
   listFieldIds?: string[];
   listFieldLimit: number;
+  listSummaryWhenOpen: TypeMobileListSummaryWhenOpen;
   listExpand: TypeMobileListExpand;
   showRowExpandToggle: boolean;
   cardFields: TypeMobileCardFields;
@@ -158,6 +160,7 @@ export function resolveMobileTransform(params: {
       config.listFieldLimit,
       listFieldIds ? listFieldIds.length : MOBILE_LIST_DEFAULT_FIELD_LIMIT
     ),
+    listSummaryWhenOpen: config.listSummaryWhenOpen ?? "keep",
     // Both follow the configuration object rather than the old
     // `allowMobileTransform` path, which keeps its original behaviour.
     listExpand:
