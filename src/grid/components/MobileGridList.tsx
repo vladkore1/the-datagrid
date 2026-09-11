@@ -1392,6 +1392,13 @@ export function MobileGridList({
                     // item too, and has to stay below this.
                     titleListActions && "order-1 w-full"
                   )}
+                  // Spanning the row, it would otherwise start under the
+                  // checkbox rather than under the title it belongs to.
+                  style={
+                    titleListActions && openRegionIndent
+                      ? { paddingInlineStart: openRegionIndent }
+                      : undefined
+                  }
                 >
                   {listDetailCells.map((cell) => (
                     <span
