@@ -1433,6 +1433,9 @@ export function MobileGridList({
                 className="tdg-mobile-row-expand h-8 w-8 shrink-0 text-muted-foreground"
                 aria-expanded={rowExpanded}
                 aria-controls={fieldsPanelId}
+                /* A disabled row's `aria-disabled` is handed down the
+                   accessibility tree. Reading a row is not acting on it. */
+                aria-disabled={false}
                 aria-label={rowExpanded ? collapseRowLabel : expandRowLabel}
                 title={rowExpanded ? collapseRowLabel : expandRowLabel}
                 onClick={(event) => {

@@ -2739,6 +2739,20 @@
  * the fields apart on a wide row and force a break inside a value on a narrow
  * one, and neither is worth the alignment.
  */
+/* A disabled row takes `pointer-events: none` so its checkbox and its actions
+   are inert. That also takes the controls that only reveal things, and a row
+   nobody can open is a row nobody can read: the fields behind the chevron are
+   the only place most of a row's values appear on a phone. Disabled here means
+   "you cannot act on this", not "you cannot look at it". The row's own tap stays
+   off, so the chevron is the single way in and cannot be confused with acting on
+   the row. */
+.tdg-root .tdg-mobile-row[data-disabled="true"] .tdg-mobile-row-expand,
+.tdg-root .tdg-mobile-row[data-disabled="true"] [data-slot="tree-toggle"],
+.tdg-root .tdg-mobile-card[data-disabled="true"] .tdg-mobile-row-expand,
+.tdg-root .tdg-mobile-card[data-disabled="true"] [data-slot="tree-toggle"] {
+  pointer-events: auto;
+}
+
 .tdg-root .tdg-mobile-row-summary {
   margin-top: var(--tdg-mobile-summary-margin-top, 0.125rem);
   column-gap: var(--tdg-mobile-summary-gap-x, 0.75rem);
